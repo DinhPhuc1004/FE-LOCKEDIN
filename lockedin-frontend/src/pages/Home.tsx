@@ -140,80 +140,6 @@ const Home: React.FC = () => {
     return () => clearInterval(interval);
   }, [isPaused]);
 
-  const playerRef = useRef<any>(null);
-  const iframeContainerRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const initPlayer = () => {
-      if (!iframeContainerRef.current) return;
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {}
-      }
-
-      playerRef.current = new (window as any).YT.Player(iframeContainerRef.current, {
-        videoId: 'qV-kw7l_ZNk',
-        playerVars: {
-          autoplay: 1,
-          mute: 1,
-          controls: 0,
-          rel: 0,
-          showinfo: 0,
-          iv_load_policy: 3,
-          modestbranding: 1,
-          disablekb: 1,
-          playsinline: 1,
-          fs: 0,
-          autohide: 1
-        },
-        events: {
-          onReady: (event: any) => {
-            event.target.mute();
-            event.target.playVideo();
-          },
-          onStateChange: (event: any) => {
-            if (event.data === (window as any).YT.PlayerState.PLAYING) {
-              setIsVideoPlaying(true);
-            }
-            if (event.data === (window as any).YT.PlayerState.ENDED) {
-              event.target.seekTo(0);
-              event.target.playVideo();
-            }
-          }
-        }
-      });
-    };
-
-    const loadYT = () => {
-      if ((window as any).YT && (window as any).YT.Player) {
-        initPlayer();
-      } else {
-        (window as any).onYouTubeIframeAPIReady = () => {
-          initPlayer();
-        };
-      }
-    };
-
-    if (!document.getElementById('youtube-iframe-api-script')) {
-      const tag = document.createElement('script');
-      tag.id = 'youtube-iframe-api-script';
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
-      firstScriptTag.parentNode?.insertBefore(tag, firstScriptTag);
-    }
-
-    loadYT();
-
-    return () => {
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {}
-      }
-    };
-  }, [currentUser, currentRole]);
-
   if (currentUser && currentRole === 'pt') {
     return <PTHome />;
   }
@@ -237,11 +163,16 @@ const Home: React.FC = () => {
 
       {/* ─── HERO SECTION ─── */}
       <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Fullscreen Hero Background Cinematic Video (Muted Autoplay Loop via API) */}
+        {/* Fullscreen Hero Background Cinematic Video (Muted Autoplay Loop) */}
         <div className={`absolute inset-0 overflow-hidden pointer-events-none select-none z-0 transition-opacity duration-1000 ${isVideoPlaying ? 'opacity-25' : 'opacity-0'}`}>
-          <div 
-            ref={iframeContainerRef}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] scale-110"
+          <video 
+            src="/marketing.mp4"
+            autoPlay
+            loop
+            muted
+            playsInline
+            onPlay={() => setIsVideoPlaying(true)}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] object-cover scale-110"
           />
           <div className="absolute inset-0 bg-brand-black/55 z-10" />
         </div>
