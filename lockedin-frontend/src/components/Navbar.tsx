@@ -49,7 +49,7 @@ const Navbar: React.FC = () => {
         { label: 'Trang Chủ', path: '/' },
         { label: 'Tìm PT', path: '/marketplace' },
         { label: 'Lịch Đặt', path: '/customer/bookings' },
-        { label: 'Lớp Học', path: '/customer/workspace' },
+        { label: 'Trò Chuyện', path: '/customer/workspace' },
         { label: 'Hồ Sơ', path: '/customer/profile' },
       ];
     }
@@ -58,7 +58,7 @@ const Navbar: React.FC = () => {
         { label: 'Trang Chủ', path: '/' },
         { label: 'Gói Dịch Vụ', path: '/pt/packages' },
         { label: 'Lịch Đặt', path: '/pt/bookings' },
-        { label: 'Lớp Học', path: '/pt/workspace' },
+        { label: 'Trò Chuyện', path: '/pt/workspace' },
         { label: 'Hồ Sơ', path: '/pt/profile' },
       ];
     }
@@ -142,7 +142,7 @@ const Navbar: React.FC = () => {
                         </div>
 
                         <div className="overflow-y-auto flex-1 divide-y divide-brand-border max-h-64">
-                          {notifications.length === 0 ? (
+                          {(!notifications || notifications.length === 0) ? (
                             <div className="p-6 text-center text-white/30 text-xs">
                               Không có thông báo nào.
                             </div>
@@ -176,10 +176,13 @@ const Navbar: React.FC = () => {
                     )}
                   </div>
 
-                  <div className="flex items-center gap-2 text-xs text-white/50 uppercase tracking-wider">
+                  <Link
+                    to={currentRole === 'pt' ? '/pt/profile' : currentRole === 'customer' ? '/customer/profile' : '/'}
+                    className="flex items-center gap-2 text-xs text-white/50 hover:text-white uppercase tracking-wider transition-colors duration-200 cursor-pointer"
+                  >
                     <User size={14} />
                     <span>{currentRole}</span>
-                  </div>
+                  </Link>
                   <button
                     onClick={() => { logout(); navigate('/'); }}
                     className="flex items-center gap-2 text-xs text-white/60 hover:text-brand-red uppercase tracking-widest transition-colors duration-200 cursor-pointer"
@@ -233,7 +236,7 @@ const Navbar: React.FC = () => {
                         )}
                       </div>
                       <div className="overflow-y-auto flex-1 divide-y divide-brand-border max-h-60">
-                        {notifications.length === 0 ? (
+                        {(!notifications || notifications.length === 0) ? (
                           <div className="p-4 text-center text-white/30 text-[10px]">
                             Không có thông báo nào.
                           </div>

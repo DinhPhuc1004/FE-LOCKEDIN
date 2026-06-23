@@ -1,47 +1,49 @@
 // src/pages/Home.tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Star, Users, Award, TrendingUp, CheckCircle, ChevronRight, Zap, Pause, Play, ChevronLeft } from 'lucide-react';
+import { ArrowRight, Star, Users, Award, TrendingUp, CheckCircle, ChevronRight, Zap, ChevronLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import PTHome from './PT/PTHome';
 import AdminHome from './AdminHome';
 import muscularMan from '../assets/muscular-man.png';
 import logoImg from '../assets/logo.png';
 
-const FEATURED_PTS = [
+const FEATURED_SHOWCASE = [
   {
     id: 1,
-    name: 'Nguyễn Văn Hùng',
-    specialty: 'Tăng Cơ & Sức Mạnh',
+    name: 'HLV HÙNG TITAN',
+    specialty: 'Bodybuilding • Powerlifting • Nutrition',
+    price: 500000,
     rating: 4.9,
-    reviews: 142,
-    price: 450000,
-    experience: '8 năm kinh nghiệm',
-    initials: 'NH',
+    reviews: 120,
+    experience: '10 năm kinh nghiệm',
+    image: muscularMan,
+    comments: [
+      { user: 'Trần Đức Khải', text: '"Báo cáo tiến độ chi tiết giúp tôi theo dõi quá trình cực kỳ rõ ràng. Không còn phải đoán mò về kết quả nữa!"' },
+      { user: 'Nguyễn Minh Tuấn', text: '"Sau 3 tháng với HLV Hùng, tôi giảm được 12kg và tăng 8kg cơ. Lối sống của tôi thực sự đã thay đổi hoàn toàn nhờ sự kỷ luật này."' },
+      { user: 'Hoàng Thái Hưng', text: '"Kiến thức dinh dưỡng của HLV Hùng cực kỳ chuyên sâu. Lịch ăn không hề nhàm chán mà vẫn đảm bảo macronutrients."' },
+      { user: 'Lâm Tuấn Kiệt', text: '"Ban đầu tôi rất sợ tạ nặng, nhưng với phương pháp coaching chuẩn khoa học, tôi đã có thể deadlift 150kg an toàn."' },
+      { user: 'Vũ Đức Mạnh', text: '"Hệ thống theo dõi bài tập rất trực quan. Tôi luôn biết ngày mai mình cần tập gì."' }
+    ]
   },
   {
     id: 2,
-    name: 'Trần Thị Lan',
-    specialty: 'Giảm Cân & Cardio',
+    name: 'HLV LAN PHẠM',
+    specialty: 'Yoga Trị Liệu • Phục Hồi Chấn Thương',
+    price: 400000,
     rating: 4.8,
-    reviews: 98,
-    price: 380000,
-    experience: '5 năm kinh nghiệm',
-    initials: 'TL',
-  },
-  {
-    id: 3,
-    name: 'Phạm Minh Đức',
-    specialty: 'Yoga & Phục Hồi',
-    rating: 5.0,
-    reviews: 76,
-    price: 420000,
+    reviews: 95,
     experience: '6 năm kinh nghiệm',
-    initials: 'PD',
-  },
+    image: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?q=80&w=1000&auto=format&fit=crop',
+    comments: [
+      { user: 'Lê Thị Thu', text: '"HLV cực kỳ tận tâm, các bài tập phục hồi đã giúp tôi hết hẳn cơn đau thắt lưng kéo dài nhiều năm."' },
+      { user: 'Phạm Văn A', text: '"Giáo án rất khoa học, từ tốn và dễ tập theo. Rất đáng tiền!"' },
+      { user: 'Ngô Thanh Ngân', text: '"Nhờ những bài tập giãn cơ của chị Lan, tôi không còn bị gù lưng và cải thiện được tư thế làm việc."' },
+      { user: 'Đào Thu Thủy', text: '"Cảm giác mỗi buổi tập như một lần thiền định. Tinh thần tôi thoái mái hơn rất nhiều."' },
+      { user: 'Trịnh Bảo Trâm', text: '"PT luôn lắng nghe và điều chỉnh cường độ sao cho phù hợp với thể trạng của tôi từng ngày."' }
+    ]
+  }
 ];
-
-
 
 const STEPS = [
   {
@@ -59,33 +61,6 @@ const STEPS = [
     title: 'Bắt Đầu Rèn Luyện',
     desc: 'Đặt lịch, thanh toán an toàn qua escrow, và bắt đầu hành trình chinh phục mục tiêu.',
   },
-];
-
-const TESTIMONIALS = [
-  {
-    name: 'Nguyễn Minh Tuấn',
-    role: 'Kế Toán Viên',
-    text: 'Sau 3 tháng với HLV Hùng, tôi giảm được 12kg và tăng 8kg cơ. LockedIn thực sự thay đổi cuộc sống tôi.',
-    rating: 5,
-  },
-  {
-    name: 'Lê Thị Thu',
-    role: 'Giáo Viên',
-    text: 'Hệ thống thanh toán escrow rất minh bạch. Tôi yên tâm tập luyện mà không lo lắng về tài chính.',
-    rating: 5,
-  },
-  {
-    name: 'Trần Đức Khải',
-    role: 'Kỹ Sư Phần Mềm',
-    text: 'Báo cáo tiến độ chi tiết giúp tôi theo dõi tiến trình cực kỳ rõ ràng. Không còn đoán mò nữa!',
-    rating: 5,
-  },
-];
-
-const SLIDES = [
-  { label: 'Quy Trình 3 Bước', desc: 'Cách thức bắt đầu luyện tập' },
-  { label: 'HLV Nổi Bật', desc: 'Đội ngũ HLV hàng đầu' },
-  { label: 'Đánh Giá Thực', desc: 'Phản hồi từ học viên' }
 ];
 
 
@@ -127,7 +102,6 @@ const Home: React.FC = () => {
   const { currentUser, currentRole } = useAuth();
   useScrollAnimation();
 
-  const [isVideoPlaying, setIsVideoPlaying] = useState(false);
 
   const [activeSlide, setActiveSlide] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
@@ -135,7 +109,7 @@ const Home: React.FC = () => {
   useEffect(() => {
     if (isPaused) return;
     const interval = setInterval(() => {
-      setActiveSlide((prev) => (prev + 1) % 3);
+      setActiveSlide((prev) => (prev + 1) % FEATURED_SHOWCASE.length);
     }, 5000);
     return () => clearInterval(interval);
   }, [isPaused]);
@@ -162,20 +136,7 @@ const Home: React.FC = () => {
       `}</style>
 
       {/* ─── HERO SECTION ─── */}
-      <section className="relative min-h-screen flex items-center overflow-hidden">
-        {/* Fullscreen Hero Background Cinematic Video (Muted Autoplay Loop) */}
-        <div className={`absolute inset-0 overflow-hidden pointer-events-none select-none z-0 transition-opacity duration-1000 ${isVideoPlaying ? 'opacity-25' : 'opacity-0'}`}>
-          <video 
-            src="/marketing.mp4"
-            autoPlay
-            loop
-            muted
-            playsInline
-            onPlay={() => setIsVideoPlaying(true)}
-            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[100vw] h-[56.25vw] min-h-[100vh] min-w-[177.77vh] object-cover scale-110"
-          />
-          <div className="absolute inset-0 bg-brand-black/55 z-10" />
-        </div>
+      <section className="relative overflow-hidden pt-12 pb-6 lg:pt-16 lg:pb-10">
 
         {/* Background grid lines */}
         <div className="absolute inset-0 opacity-5 z-10" style={{
@@ -187,7 +148,7 @@ const Home: React.FC = () => {
         <div className="absolute top-0 right-1/3 w-px h-full bg-brand-red opacity-20 hidden lg:block z-10" />
 
         <div className="section-container relative z-10 w-full">
-          <div className="grid lg:grid-cols-2 gap-12 items-center pb-24 lg:pb-32 pt-12 lg:pt-16 -translate-y-8 lg:-translate-y-16">
+          <div className="grid lg:grid-cols-2 gap-12 items-start pt-2 lg:pt-4">
             {/* Left: Copy */}
             <div className="flex flex-col gap-8">
               {/* Label */}
@@ -220,37 +181,14 @@ const Home: React.FC = () => {
                   Đăng Ký Miễn Phí
                 </Link>
               </div>
-
-              {/* Trust signals */}
-              <div className="flex items-center gap-6 pt-2">
-                <div className="flex -space-x-2">
-                  {['NH', 'TL', 'PD', 'MK'].map((init, i) => (
-                    <div
-                      key={i}
-                      className="w-8 h-8 rounded-full bg-brand-surface border-2 border-black flex items-center justify-center text-xs font-bold text-white"
-                      style={{ zIndex: 4 - i }}
-                    >
-                      {init}
-                    </div>
-                  ))}
-                </div>
-                <div>
-                  <div className="flex gap-0.5 mb-1">
-                    {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={12} className="text-white fill-white" />
-                    ))}
-                  </div>
-                  <p className="text-xs text-white/50">10,000+ người dùng tin tưởng</p>
-                </div>
-              </div>
             </div>
 
             {/* Right: Large Muscular Man Image Visual */}
-            <div className="relative flex items-center justify-center h-[500px] lg:h-[750px] xl:h-[850px] w-full pt-8 lg:pt-12">
+            <div className="relative flex items-start justify-center h-[450px] lg:h-[620px] xl:h-[700px] w-full pt-2 lg:pt-4">
               <img 
                 src={muscularMan} 
                 alt="Thể trạng" 
-                className="h-[110%] lg:h-[120%] xl:h-[135%] max-h-[90vh] w-auto object-contain object-bottom opacity-65 select-none pointer-events-none drop-shadow-[0_0_45px_rgba(230,0,0,0.2)] origin-bottom transition-all duration-500 scale-105" 
+                className="h-[105%] lg:h-[115%] xl:h-[120%] max-h-[75vh] w-auto object-contain object-top opacity-65 select-none pointer-events-none drop-shadow-[0_0_45px_rgba(230,0,0,0.2)] origin-top transition-all duration-500 scale-105" 
               />
             </div>
           </div>
@@ -264,231 +202,164 @@ const Home: React.FC = () => {
 
 
 
-      {/* ─── INTERACTIVE PORTAL CAROUSEL (3-IN-1 AUTOMATIC SLIDER) ─── */}
-      <section 
-        id="how-it-works"
-        className="py-20 lg:py-28 bg-brand-black border-y border-brand-border"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
-        <div className="section-container">
-          {/* Slides Container */}
-          <div className="relative min-h-[500px] md:min-h-[420px] lg:min-h-[480px]">
-            
-            {/* ─── SLIDE 1: HOW IT WORKS ─── */}
-            <div className={`transition-all duration-500 ease-in-out ${
-              activeSlide === 0 
-                ? 'opacity-100 translate-y-0 scale-100 z-10 relative' 
-                : 'opacity-0 translate-y-4 scale-95 pointer-events-none absolute inset-0 z-0'
-            }`}>
-              <div className="text-center mb-12">
-                <p className="section-label mb-3">Quy Trình Đơn Giản</p>
-                <h3 className="font-montserrat font-extrabold text-4xl lg:text-5xl text-white uppercase tracking-wider">
-                  Bắt Đầu Trong <span className="text-brand-red">3 Bước</span>
-                </h3>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-0 border border-brand-border bg-brand-surface/25">
-                {STEPS.map((step, i) => (
-                  <div
-                    key={i}
-                    className={`p-10 border-brand-border group hover:bg-brand-surface/50 transition-colors duration-300 ${
-                      i < STEPS.length - 1 ? 'border-b md:border-b-0 md:border-r' : ''
-                    }`}
-                  >
-                    <div className="font-montserrat font-black text-6xl text-brand-red/20 group-hover:text-brand-red/40 transition-colors duration-300 mb-6 leading-none">
-                      {step.num}
-                    </div>
-                    <h4 className="font-montserrat font-bold text-xl text-white uppercase tracking-wider mb-3">
-                      {step.title}
-                    </h4>
-                    <p className="text-white/50 text-sm leading-relaxed">{step.desc}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ─── SLIDE 2: FEATURED PTs ─── */}
-            <div className={`transition-all duration-500 ease-in-out ${
-              activeSlide === 1 
-                ? 'opacity-100 translate-y-0 scale-100 z-10 relative' 
-                : 'opacity-0 translate-y-4 scale-95 pointer-events-none absolute inset-0 z-0'
-            }`}>
-              <div className="flex items-end justify-between mb-12">
-                <div>
-                  <p className="section-label mb-3">Đội Ngũ HLV</p>
-                  <h3 className="font-montserrat font-extrabold text-4xl lg:text-5xl text-white uppercase tracking-wider">
-                    HLV Nổi Bật
-                  </h3>
-                </div>
-                <Link
-                  to="/marketplace"
-                  className="flex items-center gap-2 text-xs text-white/50 hover:text-white uppercase tracking-widest transition-colors duration-200"
-                >
-                  Xem Tất Cả <ChevronRight size={14} />
-                </Link>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-6">
-                {FEATURED_PTS.map((pt) => (
-                  <div
-                    key={pt.id}
-                    className="card-dark group p-0 overflow-hidden bg-brand-surface/40 hover:bg-brand-surface/80"
-                  >
-                    <div className="relative p-6 border-b border-brand-border">
-                      <div className="w-16 h-16 bg-brand-dark border border-brand-border group-hover:border-brand-red transition-colors duration-300 flex items-center justify-center mb-4">
-                        <span className="font-display text-xl text-white">{pt.initials}</span>
-                      </div>
-                      <h4 className="font-semibold text-white text-base mb-0.5">{pt.name}</h4>
-                      <p className="text-white/40 text-xs mb-2.5">{pt.experience}</p>
-                      <span className="badge-red py-0.5 px-2 text-[10px]">{pt.specialty}</span>
-                    </div>
-
-                    <div className="p-5 flex items-center justify-between">
-                      <div>
-                        <div className="flex items-center gap-1.5 mb-0.5">
-                          <StarRating rating={pt.rating} />
-                          <span className="text-white text-xs font-semibold">{pt.rating}</span>
-                        </div>
-                        <p className="text-white/30 text-[10px]">{pt.reviews} đánh giá</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-white/40 text-[9px] uppercase tracking-wider">Giá / Buổi</p>
-                        <p className="text-white font-bold text-base">{pt.price.toLocaleString('vi-VN')}đ</p>
-                      </div>
-                    </div>
-
-                    <div className="px-5 pb-5">
-                      <Link to="/marketplace" className="btn-primary w-full text-center text-[10px] py-2">
-                        Đặt Lịch Ngay
-                        <ArrowRight size={12} />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* ─── SLIDE 3: TESTIMONIALS ─── */}
-            <div className={`transition-all duration-500 ease-in-out ${
-              activeSlide === 2 
-                ? 'opacity-100 translate-y-0 scale-100 z-10 relative' 
-                : 'opacity-0 translate-y-4 scale-95 pointer-events-none absolute inset-0 z-0'
-            }`}>
-              <div className="text-center mb-12">
-                <p className="section-label mb-3">Đánh Giá Thực</p>
-                <h3 className="font-montserrat font-extrabold text-4xl lg:text-5xl text-white uppercase tracking-wider">
-                  Người Dùng Nói Gì
-                </h3>
-              </div>
-
-              <div className="grid md:grid-cols-3 gap-6">
-                {TESTIMONIALS.map((t, i) => (
-                  <div
-                    key={i}
-                    className="card-dark p-8 flex flex-col gap-5 bg-brand-surface/40 hover:bg-brand-surface/80"
-                  >
-                    <div className="font-display text-5xl text-brand-red leading-none">"</div>
-                    <p className="text-white/70 text-sm leading-relaxed -mt-4 flex-1">
-                      {t.text}
-                    </p>
-                    <div className="flex items-center justify-between border-t border-brand-border pt-4">
-                      <div>
-                        <p className="text-white font-semibold text-xs">{t.name}</p>
-                        <p className="text-white/30 text-[10px]">{t.role}</p>
-                      </div>
-                      <div className="flex gap-0.5">
-                        {Array.from({ length: t.rating }).map((_, j) => (
-                          <Star key={j} size={10} className="text-white fill-white" />
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
+      {/* ─── HOW IT WORKS (CLEAN & ORGANIC) ─── */}
+      <section id="how-it-works" className="py-16 lg:py-24 bg-brand-black border-y border-brand-border relative">
+        <div className="section-container relative z-10">
+          <div className="text-center mb-16">
+            <p className="section-label mb-3">Quy Trình Đơn Giản</p>
+            <h3 className="font-montserrat font-extrabold text-4xl lg:text-5xl text-white uppercase tracking-wider">
+              Bắt Đầu Trong <span className="text-brand-red">3 Bước</span>
+            </h3>
           </div>
 
-          {/* Nike-style Control Panel for 3-in-1 Carousel */}
-          <div className="mt-12 grid grid-cols-3 items-center border-t border-brand-border pt-6">
-            {/* Left Column: Autoplay Status */}
-            <div className="text-xs text-white/30 hidden md:block">
-              {!isPaused ? (
-                <span className="flex items-center gap-2">
-                  <span className="inline-block w-2 h-2 rounded-full bg-brand-red animate-ping" />
-                  Tự động chuyển slide sau 5s
-                </span>
-              ) : (
-                <span className="flex items-center gap-2 text-white/20">
-                  <span className="inline-block w-2 h-2 rounded-full bg-white/20" />
-                  Đã tạm dừng tự động phát
-                </span>
-              )}
-            </div>
+          <div className="flex flex-col md:flex-row gap-12 md:gap-8 justify-between relative">
+            {/* Connecting line for desktop */}
+            <div className="hidden md:block absolute top-8 left-[16.66%] right-[16.66%] h-[2px] bg-gradient-to-r from-brand-red/10 via-brand-red/80 to-brand-red/10" />
 
-            {/* Center Column: Dot Indicators */}
-            <div className="flex justify-center gap-2.5 col-span-3 md:col-span-1">
-              {SLIDES.map((_, index) => (
-                <button
-                  key={index}
-                  onClick={() => setActiveSlide(index)}
-                  className={`w-2.5 h-2.5 rounded-full transition-all duration-300 cursor-pointer ${
-                    activeSlide === index ? 'bg-brand-red w-6' : 'bg-white/25 hover:bg-white/45'
-                  }`}
-                  aria-label={`Slide ${index + 1}`}
-                />
-              ))}
-            </div>
-
-            {/* Right Column: Controls */}
-            <div className="flex justify-end items-center gap-3 col-span-3 md:col-span-1 mt-4 md:mt-0">
-              <button
-                onClick={() => setIsPaused(!isPaused)}
-                className="w-10 h-10 rounded-full border border-brand-border/60 hover:border-brand-red flex items-center justify-center text-white hover:text-brand-red transition-all cursor-pointer relative bg-brand-surface/40 hover:bg-brand-surface/80 hover:shadow-[0_0_12px_rgba(230,0,0,0.2)]"
-                title={isPaused ? 'Phát tự động' : 'Tạm dừng'}
-              >
-                {/* Circular Progress Ring (Hidden when paused) */}
-                {!isPaused && (
-                  <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 40 40">
-                    <circle
-                      cx="20"
-                      cy="20"
-                      r="18"
-                      className="stroke-brand-red fill-none"
-                      strokeWidth="2"
-                      strokeDasharray="113.1"
-                      strokeDashoffset="113.1"
-                      style={{
-                        animation: 'progress-ring 5s linear forwards',
-                      }}
-                      key={activeSlide} // Resets animation on slide change
-                    />
-                  </svg>
-                )}
-                {isPaused ? <Play size={14} fill="currentColor" /> : <Pause size={14} fill="currentColor" />}
-              </button>
-              <button
-                onClick={() => setActiveSlide((prev) => (prev - 1 + 3) % 3)}
-                className="w-10 h-10 rounded-full border border-brand-border flex items-center justify-center text-white hover:text-brand-red hover:border-brand-red transition-all cursor-pointer bg-brand-surface/40 hover:bg-brand-surface/80 hover:shadow-[0_0_12px_rgba(230,0,0,0.2)]"
-                title="Slide trước"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                onClick={() => setActiveSlide((prev) => (prev + 1) % 3)}
-                className="w-10 h-10 rounded-full border border-brand-border flex items-center justify-center text-white hover:text-brand-red hover:border-brand-red transition-all cursor-pointer bg-brand-surface/40 hover:bg-brand-surface/80 hover:shadow-[0_0_12px_rgba(230,0,0,0.2)]"
-                title="Slide tiếp theo"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
+            {STEPS.map((step, i) => (
+              <div key={i} className="flex-1 relative group flex flex-col items-center text-center">
+                {/* Number Circle */}
+                <div className="w-16 h-16 rounded-full bg-brand-surface border border-brand-red/30 flex items-center justify-center text-brand-red font-montserrat font-black text-2xl mb-6 shadow-[0_0_20px_rgba(230,0,0,0.1)] group-hover:shadow-[0_0_30px_rgba(230,0,0,0.4)] group-hover:scale-110 transition-all duration-300 relative z-10">
+                  {step.num}
+                </div>
+                <h4 className="font-montserrat font-bold text-xl text-white uppercase tracking-wider mb-3">
+                  {step.title}
+                </h4>
+                <p className="text-white/60 text-sm leading-relaxed max-w-xs text-center">
+                  {step.desc}
+                </p>
+              </div>
+            ))}
           </div>
         </div>
       </section>
 
+      {/* ─── FEATURED PT SHOWCASE (HORIZONTAL SLIDER) ─── */}
+      <section 
+        className="bg-brand-black py-16 overflow-hidden relative"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        <div className="section-container">
+          <div className="flex items-end justify-between mb-12 relative z-10">
+            <div>
+              <p className="section-label mb-3">Đội Ngũ HLV</p>
+              <h3 className="font-montserrat font-extrabold text-4xl lg:text-5xl text-white uppercase tracking-wider">
+                HLV Nổi Bật
+              </h3>
+            </div>
+            <Link
+              to="/marketplace"
+              className="flex items-center gap-2 text-xs lg:text-sm text-white/50 hover:text-white uppercase tracking-widest transition-colors duration-200"
+            >
+              Xem Tất Cả <ChevronRight size={16} />
+            </Link>
+          </div>
+
+          {/* Horizontal Banner Container */}
+          <div className="relative w-full overflow-hidden aspect-auto lg:aspect-[21/9] min-h-[550px] lg:min-h-[500px]">
+             {FEATURED_SHOWCASE.map((pt, index) => (
+                <div 
+                  key={pt.id} 
+                  className={`absolute inset-0 w-full h-full flex flex-col lg:flex-row transition-opacity duration-1000 ease-in-out ${activeSlide === index ? 'opacity-100 z-10' : 'opacity-0 z-0'}`}
+                >
+                  {/* Left content area */}
+                  <div className="w-full lg:w-1/2 p-6 lg:p-12 flex flex-col justify-center relative z-20 bg-gradient-to-b lg:bg-gradient-to-r from-brand-black via-brand-black to-brand-black/90 lg:to-transparent">
+                     {/* Background overlay for mobile readability */}
+                     <div className="absolute inset-0 bg-brand-black/80 lg:hidden -z-10"></div>
+                     
+                     <div className="flex items-center gap-3 mb-4 lg:mb-6">
+                        <div className="flex gap-1">
+                          <StarRating rating={pt.rating} />
+                        </div>
+                        <span className="text-white font-bold text-sm">{pt.rating} <span className="text-white/40 font-normal">({pt.reviews} đánh giá)</span></span>
+                     </div>
+                     <h2 className="font-montserrat font-black text-3xl lg:text-5xl text-white uppercase tracking-wider mb-2 lg:mb-4 leading-tight">
+                       {pt.name}
+                     </h2>
+                     <p className="text-brand-red text-xs lg:text-sm font-bold tracking-widest uppercase mb-6 lg:mb-8">
+                       {pt.specialty}
+                     </p>
+                     
+                     {/* Info row */}
+                     <div className="flex items-center gap-6 mb-8 lg:mb-10">
+                       <div>
+                         <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Giá / Buổi</p>
+                         <p className="text-white font-bold text-lg lg:text-xl">{pt.price.toLocaleString('vi-VN')}đ</p>
+                       </div>
+                       <div className="w-px h-8 bg-brand-border"></div>
+                       <div>
+                         <p className="text-white/40 text-[10px] uppercase tracking-wider mb-1">Kinh nghiệm</p>
+                         <p className="text-white font-semibold text-sm lg:text-base">{pt.experience}</p>
+                       </div>
+                     </div>
+
+                     {/* Marquee Comments */}
+                     <div 
+                       className="mt-auto pt-2 overflow-hidden relative w-full h-32 lg:h-40"
+                       style={{ maskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)', WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 15%, black 85%, transparent)' }}
+                     >
+                        <div 
+                          className="flex flex-col gap-4 absolute w-full pr-4"
+                          style={{
+                             animation: 'scroll-up 20s linear infinite'
+                          }}
+                        >
+                          {[...pt.comments, ...pt.comments].map((comment, i) => (
+                            <div key={i} className="py-2 pl-4 border-l-2 border-brand-red/70">
+                              <p className="text-white/80 text-sm leading-relaxed italic mb-2">"{comment.text.replace(/"/g, '')}"</p>
+                              <p className="text-brand-red/80 text-[10px] uppercase font-bold tracking-wider">— {comment.user}</p>
+                            </div>
+                          ))}
+                        </div>
+                     </div>
+                  </div>
+
+                  {/* Right Image area */}
+                  <div className="absolute lg:relative w-full h-full lg:w-1/2 inset-0 lg:inset-auto z-0 lg:z-10 overflow-hidden group">
+                     {/* Gradient fades on all 4 edges to seamlessly blend image into background */}
+                     <div className="absolute inset-y-0 left-0 w-2/3 lg:w-1/2 bg-gradient-to-r from-brand-black via-brand-black/80 to-transparent z-10"></div>
+                     <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-brand-black via-brand-black/80 to-transparent z-10"></div>
+                     <div className="absolute inset-y-0 right-0 w-1/4 bg-gradient-to-l from-brand-black to-transparent z-10"></div>
+                     <div className="absolute inset-x-0 top-0 h-1/4 bg-gradient-to-b from-brand-black to-transparent z-10"></div>
+                     
+                     <img 
+                       src={pt.image} 
+                       alt={pt.name}
+                       className="w-full h-full object-cover object-top opacity-40 lg:opacity-70 grayscale-[20%] contrast-[1.1] transition-transform duration-[10s] ease-out group-hover:scale-110"
+                     />
+                  </div>
+                </div>
+             ))}
+
+             {/* Slider Controls OVERLAY */}
+             <div className="absolute bottom-4 right-4 lg:bottom-6 lg:right-6 z-30 flex items-center gap-3">
+               <button
+                 onClick={() => setActiveSlide((prev) => (prev - 1 + FEATURED_SHOWCASE.length) % FEATURED_SHOWCASE.length)}
+                 className="w-10 h-10 rounded-full bg-brand-black/80 border border-brand-border flex items-center justify-center text-white hover:text-brand-red transition-all cursor-pointer backdrop-blur-md hover:scale-110"
+               >
+                 <ChevronLeft size={16} />
+               </button>
+               <button
+                 onClick={() => setActiveSlide((prev) => (prev + 1) % FEATURED_SHOWCASE.length)}
+                 className="w-10 h-10 rounded-full bg-brand-black/80 border border-brand-border flex items-center justify-center text-white hover:text-brand-red transition-all cursor-pointer backdrop-blur-md hover:scale-110"
+               >
+                 <ChevronRight size={16} />
+               </button>
+             </div>
+          </div>
+        </div>
+      </section>
+
+      <style>{`
+        @keyframes scroll-up {
+          0% { transform: translateY(0); }
+          100% { transform: translateY(-50%); }
+        }
+      `}</style>
+      
       {/* ─── WHY LOCKEDIN ─── */}
-      <section className="py-24 lg:py-32">
+      <section className="py-14 lg:py-20">
         <div className="section-container">
           <div className="grid lg:grid-cols-2 gap-16 items-center">
             <div className="animate-on-scroll">
@@ -545,11 +416,9 @@ const Home: React.FC = () => {
 
 
       {/* ─── FINAL CTA ─── */}
-      <section className="py-24 lg:py-32">
+      <section className="py-14 lg:py-20">
         <div className="section-container">
-          <div className="border border-brand-red/30 p-12 lg:p-20 text-center animate-on-scroll relative overflow-hidden">
-            {/* Background accent */}
-            <div className="absolute inset-0 bg-brand-red opacity-5" />
+          <div className="py-12 lg:py-20 text-center animate-on-scroll relative overflow-hidden">
             <div className="relative z-10">
               <p className="section-label mb-6">Bắt Đầu Ngay Hôm Nay</p>
               <h2 className="font-montserrat font-black text-6xl lg:text-8xl text-white uppercase tracking-tight mb-6">

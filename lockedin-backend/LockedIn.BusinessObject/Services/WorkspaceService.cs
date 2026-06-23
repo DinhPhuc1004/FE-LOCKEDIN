@@ -43,6 +43,7 @@ public class WorkspaceService : IWorkspaceService
         }
 
         var workspace = await _unitOfWork.Workspaces.Query()
+            .Include(w => w.WorkspaceSessions)
             .FirstOrDefaultAsync(w => w.BookingId == bookingId);
 
         if (workspace == null)
@@ -62,6 +63,7 @@ public class WorkspaceService : IWorkspaceService
         }
 
         var workspace = await _unitOfWork.Workspaces.Query()
+            .Include(w => w.WorkspaceSessions)
             .FirstOrDefaultAsync(w => w.Id == workspaceId);
 
         if (workspace == null)
@@ -118,6 +120,67 @@ public class WorkspaceService : IWorkspaceService
 
         var response = MapToWorkspaceResponse(workspace);
         return ApiResponse<WorkspaceResponse>.Ok(response, "Course note updated successfully.");
+    }
+
+    public async Task<ApiResponse<WorkspaceResponse>> LogSessionAsync(Guid workspaceId)
+    {
+        if (!_currentUserService.IsAuthenticated || !_currentUserService.UserId.HasValue)
+        {
+            return ApiResponse<WorkspaceResponse>.Fail("User is not authenticated.");
+        }
+
+        var workspace = await _unitOfWork.Workspaces.Query()
+            .Include(w => w.WorkspaceSessions)
+            .Include(w => w.Booking)
+            .FirstOrDefaultAsync(w => w.Id == workspaceId);
+
+        if (workspace == null)
+        {
+            return ApiResponse<WorkspaceResponse>.Fail("Workspace not found.");
+        }
+
+        var userId = _currentUserService.UserId.Value;
+
+        if (_currentUserService.Role == (int)UserRole.PersonalTrainer)
+        {
+            var ptProfile = await _unitOfWork.PtProfiles.Query()
+                .FirstOrDefaultAsync(pt => pt.UserId == userId && !pt.IsDeleted);
+            if (ptProfile == null || workspace.PtProfileId != ptProfile.Id)
+            {
+                return ApiResponse<WorkspaceResponse>.Fail("You are not the personal trainer assigned to this workspace.");
+            }
+        }
+        else if (_currentUserService.Role != (int)UserRole.Admin)
+        {
+            return ApiResponse<WorkspaceResponse>.Fail("Only personal trainers or admins can log a session.");
+        }
+
+        if (workspace.WorkspaceSessions.Count >= workspace.Booking.SessionCount)
+        {
+            return ApiResponse<WorkspaceResponse>.Fail("All sessions have already been completed.");
+        }
+
+        var newSession = new WorkspaceSession
+        {
+            WorkspaceId = workspace.Id
+        };
+
+        workspace.WorkspaceSessions.Add(newSession);
+        
+        // If this is the last session, complete the course
+        if (workspace.WorkspaceSessions.Count == workspace.Booking.SessionCount)
+        {
+            workspace.Status = (int)BookingStatus.CompletedPendingSettlement;
+            workspace.Booking.Status = (int)BookingStatus.CompletedPendingSettlement;
+            workspace.Booking.CompletedAt = DateTime.UtcNow;
+            _unitOfWork.Workspaces.Update(workspace);
+            _unitOfWork.Bookings.Update(workspace.Booking);
+        }
+
+        await _unitOfWork.SaveChangesAsync();
+
+        var response = MapToWorkspaceResponse(workspace);
+        return ApiResponse<WorkspaceResponse>.Ok(response, "Session logged successfully.");
     }
 
     #region Access Control Helpers & Mapping
@@ -192,6 +255,7 @@ public class WorkspaceService : IWorkspaceService
             PtProfileId = workspace.PtProfileId,
             Status = workspace.Status,
             CourseNote = workspace.CourseNote,
+            SessionCompletedCount = workspace.WorkspaceSessions?.Count ?? 0,
             CreatedAt = workspace.CreatedAt
         };
     }

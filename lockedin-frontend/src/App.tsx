@@ -23,6 +23,7 @@ import ProfilePage from './pages/ProfilePage';
 // PT Portal Spec
 import PTPackages from './pages/PT/PTPackages';
 import PTBookings from './pages/PT/PTBookings';
+import PTPendingVerification from './pages/PT/PTPendingVerification';
 
 // Customer Portal Spec
 import CustomerBookings from './pages/Customer/CustomerBookings';
@@ -36,6 +37,7 @@ const RoleProtectedRoute: React.FC<{
   children: React.ReactNode;
 }> = ({ allowedRoles, children }) => {
   const { currentUser, currentRole } = useAuth();
+  const location = useLocation();
 
   if (!currentUser) {
     return <Navigate to="/login" replace />;
@@ -43,6 +45,16 @@ const RoleProtectedRoute: React.FC<{
 
   if (currentRole && !allowedRoles.includes(currentRole)) {
     return <Navigate to="/marketplace" replace />;
+  }
+
+  if (currentRole === 'pt') {
+    const isPendingPage = location.pathname === '/pt/pending';
+    if (currentUser.verificationStatus !== 'verified' && !isPendingPage) {
+      return <Navigate to="/pt/pending" replace />;
+    }
+    if (currentUser.verificationStatus === 'verified' && isPendingPage) {
+      return <Navigate to="/pt/bookings" replace />;
+    }
   }
 
   return <>{children}</>;
@@ -136,6 +148,14 @@ const AppContent: React.FC = () => {
             element={
               <RoleProtectedRoute allowedRoles={['pt']}>
                 <ProfilePage />
+              </RoleProtectedRoute>
+            } 
+          />
+          <Route 
+            path="/pt/pending" 
+            element={
+              <RoleProtectedRoute allowedRoles={['pt']}>
+                <PTPendingVerification />
               </RoleProtectedRoute>
             } 
           />

@@ -40,7 +40,145 @@ export function saveMockWorkspaces(w: Workspace[]): void {
 
 export function getMockMessages(workspaceId?: string): ChatMessage[] {
   const data = localStorage.getItem(MESSAGES_KEY);
-  const messages: ChatMessage[] = data ? JSON.parse(data) : [];
+  let messages: ChatMessage[] = data ? JSON.parse(data) : [];
+  
+  if (messages.length === 0) {
+    messages = [
+      // ws-mock-active chat history
+      {
+        id: 'msg-mock-1',
+        workspaceId: 'ws-mock-active',
+        senderId: 'pt-mock-1',
+        senderName: 'PT Test Account',
+        text: 'Chào bạn! Hôm nay bạn chuẩn bị thể lực tốt để đẩy bài ngực (Bench Press) chưa?',
+        createdAt: new Date(Date.now() - 24 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock-2',
+        workspaceId: 'ws-mock-active',
+        senderId: 'customer-mock',
+        senderName: 'Học Viên',
+        text: 'Dạ chào HLV, em chuẩn bị sẵn sàng rồi ạ. Em mới ăn nhẹ một lát bánh mì với chuối khoảng 1 tiếng trước.',
+        createdAt: new Date(Date.now() - 23.9 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock-3',
+        workspaceId: 'ws-mock-active',
+        senderId: 'pt-mock-1',
+        senderName: 'PT Test Account',
+        text: 'Ăn nhẹ như thế rất hợp lý để có năng lượng tập luyện. Hôm nay mình sẽ thử nâng mức tạ lên 50kg nhé.',
+        createdAt: new Date(Date.now() - 23.8 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock-4',
+        workspaceId: 'ws-mock-active',
+        senderId: 'customer-mock',
+        senderName: 'Học Viên',
+        text: 'Dạ, em sẽ cố gắng hết sức dưới sự hỗ trợ của anh.',
+        createdAt: new Date(Date.now() - 23.5 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock-5',
+        workspaceId: 'ws-mock-active',
+        senderId: 'pt-mock-1',
+        senderName: 'PT Test Account',
+        text: 'Hôm nay tập xuất sắc lắm! Hãy uống đủ nước và ngủ sớm nhé. Ngày mai mình sẽ nghỉ để cơ bắp phục hồi.',
+        createdAt: new Date(Date.now() - 4 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock-6',
+        workspaceId: 'ws-mock-active',
+        senderId: 'customer-mock',
+        senderName: 'Học Viên',
+        text: 'Cảm ơn anh nhiều! Em cảm thấy cơ ngực căng và mỏi rất đã.',
+        createdAt: new Date(Date.now() - 3.8 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      
+      // ws-mock-active-2 chat history
+      {
+        id: 'msg-mock2-1',
+        workspaceId: 'ws-mock-active-2',
+        senderId: 'pt-mock-1',
+        senderName: 'PT Test Account',
+        text: 'Chào Hùng! Hôm nay mình sẽ tập trung vào nhóm cơ chân và đùi trước nhé.',
+        createdAt: new Date(Date.now() - 36 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock2-2',
+        workspaceId: 'ws-mock-active-2',
+        senderId: 'customer-mock',
+        senderName: 'Học Viên',
+        text: 'Chào anh, hôm trước em tập đùi sau vẫn hơi mỏi, hôm nay tập đùi trước có sao không anh?',
+        createdAt: new Date(Date.now() - 35.9 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock2-3',
+        workspaceId: 'ws-mock-active-2',
+        senderId: 'pt-mock-1',
+        senderName: 'PT Test Account',
+        text: 'Không sao em, hai nhóm cơ đó đối kháng nhau nên đùi sau vẫn có thời gian hồi phục. Mình khởi động kỹ khớp gối là ok nhé.',
+        createdAt: new Date(Date.now() - 35.8 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock2-4',
+        workspaceId: 'ws-mock-active-2',
+        senderId: 'customer-mock',
+        senderName: 'Học Viên',
+        text: 'Dạ vâng, em khởi động đây ạ. Hôm nay vẫn tập lúc 18h đúng không anh?',
+        createdAt: new Date(Date.now() - 35.5 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock2-5',
+        workspaceId: 'ws-mock-active-2',
+        senderId: 'pt-mock-1',
+        senderName: 'PT Test Account',
+        text: 'Đúng rồi em, 18h anh online phòng tập đợi em vào gọi video hướng dẫn.',
+        createdAt: new Date(Date.now() - 35 * 3600 * 1000).toISOString(),
+        read: true
+      },
+
+      // ws-mock-completed chat history
+      {
+        id: 'msg-mock3-1',
+        workspaceId: 'ws-mock-completed',
+        senderId: 'pt-mock-1',
+        senderName: 'PT Test Account',
+        text: 'Chúc mừng Đức đã hoàn thành xuất sắc buổi học thứ 12 - buổi cuối cùng trong khóa tập!',
+        createdAt: new Date(Date.now() - 2 * 24 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock3-2',
+        workspaceId: 'ws-mock-completed',
+        senderId: 'customer-mock',
+        senderName: 'Học Viên',
+        text: 'Dạ em cảm ơn anh rất nhiều! Nhờ sự hướng dẫn tận tình của anh mà em đã tăng được 3kg cơ và giảm mỡ bụng rõ rệt, cơ thể săn chắc hơn nhiều.',
+        createdAt: new Date(Date.now() - 1.9 * 24 * 3600 * 1000).toISOString(),
+        read: true
+      },
+      {
+        id: 'msg-mock3-3',
+        workspaceId: 'ws-mock-completed',
+        senderId: 'pt-mock-1',
+        senderName: 'PT Test Account',
+        text: 'Đó phần lớn là nhờ sự kỷ luật ăn uống và luyện tập chăm chỉ của em. Hãy tiếp tục duy trì phong độ này nhé, nếu cần thiết kế giáo án tự tập cứ nhắn anh.',
+        createdAt: new Date(Date.now() - 1.8 * 24 * 3600 * 1000).toISOString(),
+        read: true
+      }
+    ];
+    localStorage.setItem(MESSAGES_KEY, JSON.stringify(messages));
+  }
+  
   if (workspaceId) {
     return messages.filter(m => m.workspaceId === workspaceId);
   }

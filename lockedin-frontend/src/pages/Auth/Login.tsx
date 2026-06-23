@@ -130,19 +130,8 @@ const Login: React.FC = () => {
           </p>
         </div>
 
-        {/* Bottom stats */}
-        <div className="flex gap-12 relative z-10">
-          {[
-            { value: '10K+', label: 'Thành viên' },
-            { value: '500+', label: 'HLV' },
-            { value: '98%', label: 'Hài lòng' },
-          ].map((s, i) => (
-            <div key={i}>
-              <p className="font-montserrat font-black text-3xl text-white">{s.value}</p>
-              <p className="text-white/30 text-xs uppercase tracking-widest">{s.label}</p>
-            </div>
-          ))}
-        </div>
+        {/* Dummy spacer to keep main copy centered in justify-between flex layout */}
+        <div className="h-16 pointer-events-none select-none relative z-10 opacity-0" />
       </div>
 
       {/* Right: Login Form */}

@@ -197,7 +197,7 @@ const PTHome: React.FC = () => {
                       
                       <div className="flex items-center gap-2">
                         <button 
-                          onClick={() => navigate('/pt/workspace')} 
+                          onClick={() => navigate(`/pt/workspace?bookingId=${b.id}`)} 
                           className="btn-primary text-xs py-2.5 px-5"
                         >
                           Vào Dạy Học

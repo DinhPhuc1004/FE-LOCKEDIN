@@ -10,5 +10,6 @@ public class WorkspaceResponse
     public Guid PtProfileId { get; set; }
     public int Status { get; set; }
     public string? CourseNote { get; set; }
+    public int SessionCompletedCount { get; set; }
     public DateTime CreatedAt { get; set; }
 }

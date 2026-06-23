@@ -13,7 +13,7 @@ interface AuthContextType {
   logout: () => void;
   updateProfile: (updatedData: Partial<User>) => Promise<void>;
   devSwitchRole: (role: UserRole) => void;
-  requestVerification: (personalId: string, certificates: string[], notes?: string) => void;
+  requestVerification: (personalId: File, certificates: File[], notes?: string) => void;
   refreshUsersList: () => void;
 }
 
@@ -29,8 +29,8 @@ const getInitialSession = () => {
         return {
           user: {
             id: parsed.userId,
-            email: mappedRole === 'pt' ? 'alex.pt@lockedin.fit' : 'customer@lockedin.fit',
-            fullName: mappedRole === 'pt' ? 'HLV Của Bạn' : 'Người Dùng',
+            email: mappedRole === 'pt' ? 'pttest@gmail.com' : mappedRole === 'admin' ? 'admin@lockedin.vn' : 'usertest@gmail.com',
+            fullName: mappedRole === 'pt' ? 'PT Test Account' : mappedRole === 'admin' ? 'LockedIn Admin' : 'Customer Test Account',
             role: mappedRole,
             isEmailVerified: true
           },
@@ -62,8 +62,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setCurrentRole(parsedSession.role);
             setCurrentUser({
               id: parsedSession.userId,
-              email: parsedSession.role === 'pt' ? 'alex.pt@lockedin.fit' : 'customer@lockedin.fit',
-              fullName: parsedSession.role === 'pt' ? 'HLV Của Bạn' : 'Người Dùng',
+              email: parsedSession.role === 'pt' ? 'pttest@gmail.com' : parsedSession.role === 'admin' ? 'admin@lockedin.vn' : 'usertest@gmail.com',
+              fullName: parsedSession.role === 'pt' ? 'PT Test Account' : parsedSession.role === 'admin' ? 'LockedIn Admin' : 'Customer Test Account',
               role: parsedSession.role,
               isEmailVerified: true
             });
@@ -99,6 +99,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 avatar: avatar
               });
               setCurrentRole(mappedRole);
+
+              // Now fetch extra profile details
+              if (mappedRole === 'customer') {
+                try {
+                  const profileRes = await api.get('/customers/me/profile');
+                  if (profileRes.data?.success && profileRes.data.data) {
+                    const p = profileRes.data.data;
+                    setCurrentUser(prev => prev ? {
+                      ...prev,
+                      gender: p.gender,
+                      height: p.heightCm,
+                      weight: p.weightKg,
+                      fitnessGoal: p.fitnessGoal,
+                      healthNotes: p.healthNote
+                    } : null);
+                  }
+                } catch (err) {}
+              } else if (mappedRole === 'pt') {
+                try {
+                  const profileRes = await api.get('/pts/me/profile');
+                  if (profileRes.data?.success && profileRes.data.data) {
+                    const p = profileRes.data.data;
+                    setCurrentUser(prev => prev ? {
+                      ...prev,
+                      bio: p.bio,
+                      experienceYears: p.experienceYears,
+                      specialization: p.specialization ? p.specialization.split(',') : [],
+                      verificationStatus: p.verificationStatus === 3 ? 'verified' : p.verificationStatus === 4 ? 'rejected' : 'pending'
+                    } : null);
+                  }
+                } catch (err) {}
+              }
             }
           }
         } catch (e) {
@@ -204,7 +236,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 bio: p.bio,
                 experienceYears: p.experienceYears,
                 specialization: p.specialization ? p.specialization.split(',') : [],
-                verificationStatus: p.verificationStatus === 2 ? 'verified' : p.verificationStatus === 3 ? 'rejected' : 'pending'
+                verificationStatus: p.verificationStatus === 3 ? 'verified' : p.verificationStatus === 4 ? 'rejected' : 'pending'
               } : null);
             }
           }
@@ -321,8 +353,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentUser({
           ...currentUser,
           role,
-          email: 'alex.pt@lockedin.fit',
-          fullName: 'Alex Rivera',
+          email: 'pttest@gmail.com',
+          fullName: 'PT Test Account',
           phoneNumber: '0909 888 777',
           avatar: 'https://images.unsplash.com/photo-1548690312-e3b507d8c110?q=80&w=250&auto=format&fit=crop',
           bio: 'Chuyên gia thể hình với hơn 8 năm kinh nghiệm trong lĩnh vực nâng tạ, tăng cơ và phục hồi chấn thương.',
@@ -333,8 +365,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentUser({
           ...currentUser,
           role,
-          email: 'admin@lockedin.fit',
-          fullName: 'Hệ Thống Admin',
+          email: 'admin@lockedin.vn',
+          fullName: 'LockedIn Admin',
           phoneNumber: '0912 345 678',
           avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?q=80&w=250&auto=format&fit=crop'
         });
@@ -342,8 +374,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setCurrentUser({
           ...currentUser,
           role,
-          email: 'customer@lockedin.fit',
-          fullName: 'Trần Văn Hùng',
+          email: 'usertest@gmail.com',
+          fullName: 'Customer Test Account',
           phoneNumber: '0901 234 567',
           avatar: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=250&auto=format&fit=crop',
           gender: 'male',
@@ -356,20 +388,36 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const requestVerification = async (personalId: string, certificates: string[], notes?: string) => {
+  const requestVerification = async (personalId: File, certificates: File[], notes?: string) => {
     if (!currentUser || currentUser.role !== 'pt') return;
     console.log('Submitting verification documents. Notes:', notes);
 
     try {
+      // Helper to upload a single file
+      const uploadFile = async (file: File) => {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await api.post('/uploads/image?folder=documents', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+        if (res.data?.success) {
+          return res.data.data.secureUrl || res.data.data.url;
+        }
+        throw new Error('File upload failed');
+      };
+
+      const personalIdUrl = await uploadFile(personalId);
+
       await api.post('/pts/me/documents', {
         documentType: 1, // CCCD
-        fileUrl: personalId
+        fileUrl: personalIdUrl
       });
 
-      for (const cert of certificates) {
+      for (const certFile of certificates) {
+        const certUrl = await uploadFile(certFile);
         await api.post('/pts/me/documents', {
           documentType: 2, // Certificate
-          fileUrl: cert
+          fileUrl: certUrl
         });
       }
 
@@ -378,6 +426,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
     } catch (e) {
       console.error('Error uploading documents:', e);
+      throw e;
     }
   };
 

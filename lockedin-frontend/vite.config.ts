@@ -8,7 +8,7 @@ export default defineConfig({
     allowedHosts: true,
     proxy: {
       '/api': {
-        target: 'https://lockedin-api-app-anaddmbcegecceej.southeastasia-01.azurewebsites.net',
+        target: 'http://localhost:5122',
         changeOrigin: true,
         secure: false,
       }

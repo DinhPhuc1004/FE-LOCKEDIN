@@ -1,14 +1,14 @@
 // src/pages/CheckoutSim.tsx
 import React, { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Shield, CheckCircle, Lock, ArrowLeft } from 'lucide-react';
+import { Shield, CheckCircle, Lock, ArrowLeft, X, ExternalLink, CreditCard } from 'lucide-react';
 import { useData } from '../context/DataContext';
 import api from '../services/api';
 
 const PAYMENT_METHODS = [
-  { id: 'card', label: 'Thẻ Tín Dụng / Ghi Nợ', icon: '💳' },
-  { id: 'momo', label: 'Ví MoMo', icon: '💜' },
-  { id: 'banking', label: 'Chuyển Khoản Ngân Hàng', icon: '🏦' },
+  { id: 'card', label: 'Thẻ Tín Dụng / Ghi Nợ', logo: '/visa_logo_new.png' },
+  { id: 'momo', label: 'Ví MoMo', logo: '/momo_logo_new.png' },
+  { id: 'banking', label: 'Chuyển Khoản Ngân Hàng', logo: 'https://payos.vn/docs/img/logo.svg' },
 ];
 
 const CheckoutSim: React.FC = () => {
@@ -21,6 +21,8 @@ const CheckoutSim: React.FC = () => {
   const [success, setSuccess] = useState(false);
   const [fallbackMode, setFallbackMode] = useState(false);
   const [payError, setPayError] = useState('');
+  const [qrUrl, setQrUrl] = useState('');
+  const [showQrModal, setShowQrModal] = useState(false);
 
   const booking = bookings.find((b) => b.id === bookingId);
 
@@ -47,13 +49,25 @@ const CheckoutSim: React.FC = () => {
   const handlePay = async () => {
     setProcessing(true);
     setPayError('');
+    
+    // Check if it's a mock booking ID (e.g., does not match GUID pattern or contains mock)
+    const isGuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(booking.id);
+    if (!isGuid || booking.id.includes('mock')) {
+      const mockCheckoutUrl = `https://pay.payos.vn/checkout/mock-${booking.id}`;
+      setQrUrl(mockCheckoutUrl);
+      setShowQrModal(true);
+      setProcessing(false);
+      return;
+    }
+
     try {
       const res = await api.post('/payments/create-link', {
         bookingId: booking.id,
       });
       if (res.data?.success && res.data.data?.checkoutUrl) {
-        // Redirection to actual PayOS Checkout Url
-        window.location.href = res.data.data.checkoutUrl;
+        // Show QR Code modal instead of redirecting away
+        setQrUrl(res.data.data.checkoutUrl);
+        setShowQrModal(true);
       } else {
         setFallbackMode(true);
       }
@@ -136,7 +150,15 @@ const CheckoutSim: React.FC = () => {
                     payMethod === m.id ? 'border-brand-red bg-brand-red/10' : 'border-brand-border bg-brand-surface hover:border-white/20'
                   }`}
                 >
-                  <span className="text-2xl">{m.icon}</span>
+                  <div className="w-12 h-12 bg-white flex items-center justify-center border border-brand-border flex-shrink-0">
+                    <img 
+                      src={m.logo} 
+                      alt={m.label} 
+                      className={`max-h-full max-w-full object-contain ${
+                        m.id === 'banking' ? 'p-0.5 scale-[1.35]' : 'p-1'
+                      }`} 
+                    />
+                  </div>
                   <span className={`font-semibold text-sm ${payMethod === m.id ? 'text-white' : 'text-white/60'}`}>{m.label}</span>
                   <div className={`ml-auto w-4 h-4 rounded-full border-2 transition-colors ${payMethod === m.id ? 'border-brand-red bg-brand-red' : 'border-brand-muted'}`} />
                 </button>
@@ -287,11 +309,60 @@ const CheckoutSim: React.FC = () => {
               >
                 Xác Nhận Giả Lập Thành Công (Nhanh)
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Premium PayOS QR Code Modal */}
+      {showQrModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-brand-surface border border-brand-red w-full max-w-md p-6 relative animate-fade-up text-center">
+            <button 
+              onClick={() => setShowQrModal(false)}
+              className="absolute top-4 right-4 text-white/40 hover:text-white cursor-pointer"
+            >
+              <X size={20} />
+            </button>
+            
+            <div className="w-12 h-12 bg-brand-red/10 border border-brand-red flex items-center justify-center mx-auto mb-4">
+              <CreditCard size={24} className="text-brand-red" />
+            </div>
+            
+            <h3 className="font-montserrat font-bold text-xl text-white uppercase tracking-wider mb-2">Thanh Toán Quét Mã QR</h3>
+            <p className="text-white/60 text-xs mb-6">
+              Sử dụng ứng dụng Ngân hàng hoặc Ví điện tử quét mã QR bên dưới để thực hiện thanh toán an toàn qua PayOS.
+            </p>
+            
+            {/* QR Code Container */}
+            <div className="bg-white p-4 inline-block rounded-lg mb-6 border-4 border-brand-red shadow-[0_0_20px_rgba(230,0,0,0.3)]">
+              <img 
+                src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(qrUrl)}`} 
+                alt="PayOS QR Code" 
+                className="w-48 h-48 mx-auto"
+              />
+            </div>
+            
+            <div className="flex flex-col gap-2">
+              <a
+                href={qrUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary w-full justify-center py-3 text-xs cursor-pointer flex items-center justify-center gap-2"
+              >
+                Mở Trang Thanh Toán PayOS <ExternalLink size={12} />
+              </a>
               <button
-                onClick={() => setFallbackMode(false)}
+                onClick={async () => {
+                  setProcessing(true);
+                  await simulatePayOSPayment(booking.id);
+                  setProcessing(false);
+                  setSuccess(true);
+                  setShowQrModal(false);
+                }}
                 className="w-full py-3 border border-brand-border text-white/50 text-xs font-semibold uppercase tracking-widest hover:text-white transition-all cursor-pointer text-center"
               >
-                Hủy
+                Tôi Đã Thanh Toán Thành Công
               </button>
             </div>
           </div>

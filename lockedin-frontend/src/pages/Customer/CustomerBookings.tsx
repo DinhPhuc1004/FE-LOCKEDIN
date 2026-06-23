@@ -232,7 +232,7 @@ const CustomerBookings: React.FC = () => {
                 </h3>
                 <div className="flex gap-2">
                   <div className="flex items-center gap-2 text-xs text-white/40">
-                    <div className="w-3 h-3 bg-brand-red" /> Ngày Có Buổi
+                    <div className="w-3 h-3 bg-brand-red" /> Ngày Có Buổi (Dự kiến)
                   </div>
                   <div className="flex items-center gap-2 text-xs text-white/40 ml-4">
                     <div className="w-3 h-3 border border-white" /> Hôm Nay
@@ -257,8 +257,24 @@ const CustomerBookings: React.FC = () => {
                 {Array.from({ length: daysInMonth }).map((_, i) => {
                   const day = i + 1;
                   const isToday = day === today.getDate();
-                  // Hardcoded highlight days matching some workouts
-                  const hasSession = [2, 5, 8, 12, 16, 19, 23, 26].includes(day) && activeCount > 0;
+                  
+                  // Calculate estimated session days dynamically
+                  // e.g. For active bookings, assuming 3 sessions a week (M, W, F) starting from createdAt
+                  const hasSession = bookings.filter(b => b.status === 'Active').some(b => {
+                    const start = new Date(b.createdAt);
+                    if (start.getMonth() === today.getMonth() && start.getFullYear() === today.getFullYear()) {
+                       // Very simple estimation logic: 3 sessions a week starting from createdAt date
+                       // For simplicity, let's just spread them evenly every 2 days
+                       for(let s = 0; s < b.sessionsCount; s++) {
+                         const sessionDate = new Date(start.getTime() + s * 2 * 24 * 3600 * 1000);
+                         if (sessionDate.getMonth() === today.getMonth() && sessionDate.getDate() === day) {
+                           return true;
+                         }
+                       }
+                    }
+                    return false;
+                  });
+
                   return (
                     <div
                       key={day}

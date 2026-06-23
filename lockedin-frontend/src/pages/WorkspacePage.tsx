@@ -5,10 +5,34 @@ import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import api from '../services/api';
 import { getMockMessages, saveMockMessages } from '../services/mockFirebase';
+import { useLocation } from 'react-router-dom';
 
 const WorkspacePage: React.FC = () => {
-  const { workspaces, incrementWorkspaceSession, fileDispute } = useData();
+  const { workspaces, incrementWorkspaceSession, fileDispute, refreshBackendData } = useData();
   const { currentUser } = useAuth();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const bookingIdParam = searchParams.get('bookingId');
+  const workspaceIdParam = searchParams.get('workspaceId') || searchParams.get('wsId');
+
+  const displayWorkspaces = workspaces.length > 0 ? workspaces : [
+    {
+      id: 'ws-mock-active',
+      bookingId: 'booking-mock-active',
+      customerId: currentUser?.role === 'pt' ? 'cust-mock-2' : currentUser?.id || 'cust-me',
+      customerName: currentUser?.role === 'pt' ? 'Lê Thị B' : currentUser?.fullName || 'Học Viên',
+      ptId: currentUser?.role === 'pt' ? currentUser?.id || 'pt-me' : 'pt-mock-1',
+      ptName: currentUser?.role === 'pt' ? currentUser?.fullName || 'PT Test Account' : 'PT Test Account',
+      packageName: 'Tăng Cơ & Sức Mạnh Cấp Tốc',
+      sessionsTotal: 12,
+      sessionsCompleted: 4,
+      status: 'active',
+      ptNotes: currentUser?.role === 'pt'
+        ? 'Học viên thể lực tốt, đẩy ngực đều. Nên tăng thêm bài tập đùi đĩa để phát triển toàn diện.'
+        : 'Hãy ăn đủ đạm và giữ chế độ sinh hoạt đều đặn để phục hồi cơ bắp tốt nhất nhé.',
+      createdAt: new Date().toISOString()
+    }
+  ];
   
   const [selectedWorkspace, setSelectedWorkspace] = useState<any>(null);
   const [conversation, setConversation] = useState<any>(null);
@@ -41,16 +65,202 @@ const WorkspacePage: React.FC = () => {
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Initialize selectedWorkspace with the first workspace
-  useEffect(() => {
-    if (workspaces.length > 0 && !selectedWorkspace) {
-      setSelectedWorkspace(workspaces[0]);
+  // State for confirmed checkout sessions (to prevent double confirmation)
+  const [confirmedSessions, setConfirmedSessions] = useState<string[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem('lockedin_confirmed_sessions') || '[]');
+    } catch {
+      return [];
     }
-  }, [workspaces, selectedWorkspace]);
+  });
+
+  // Keep selectedWorkspace in sync with the latest data from displayWorkspaces context
+  useEffect(() => {
+    if (selectedWorkspace && displayWorkspaces.length > 0) {
+      const latest = displayWorkspaces.find(w => w.id === selectedWorkspace.id);
+      if (latest && (
+        latest.sessionsCompleted !== selectedWorkspace.sessionsCompleted ||
+        latest.status !== selectedWorkspace.status ||
+        latest.ptNotes !== selectedWorkspace.ptNotes
+      )) {
+        setSelectedWorkspace(latest);
+      }
+    }
+  }, [displayWorkspaces, selectedWorkspace]);
+
+  // Call the specific REST API endpoint to log a session
+  const sendCheckoutRequest = async (wsId: string, sessionNum: number) => {
+    setSendingMessage(true);
+    try {
+      if (!useMockChat) {
+        // 1. Log session directly via proper backend endpoint
+        const sessionRes = await api.post(`/workspaces/${wsId}/sessions`);
+        if (!sessionRes.data?.success) {
+          throw new Error('Failed to log session via backend API');
+        }
+        
+        // Refresh context data to sync the new session count
+        if (refreshBackendData) refreshBackendData();
+
+        // 2. Post a cosmetic message for UI history (optional)
+        const checkoutMessageText = `[CheckoutCompleted:${sessionNum}]`;
+        try {
+          await api.post(`/conversations/messages`, {
+            conversationId: conversation.id,
+            content: checkoutMessageText,
+            messageType: 'system'
+          });
+          const msgsRes = await api.get(`/conversations/messages/${conversation.id}`);
+          if (msgsRes.data?.success) setMessages(msgsRes.data.data);
+        } catch (msgErr) {
+          console.warn('Failed to send cosmetic checkout message:', msgErr);
+        }
+      } else {
+        incrementWorkspaceSession(wsId);
+        const checkoutMessageText = `[CheckoutCompleted:${sessionNum}]`;
+        const newMsg = {
+          id: 'msg-' + Date.now(),
+          workspaceId: wsId,
+          senderId: currentUser?.id || 'user',
+          senderName: currentUser?.fullName || 'System',
+          text: checkoutMessageText,
+          createdAt: new Date().toISOString(),
+          read: true
+        };
+        const allMsgs = getMockMessages();
+        allMsgs.push(newMsg);
+        saveMockMessages(allMsgs);
+        setMessages(prev => [...prev, {
+          id: newMsg.id,
+          senderUserId: newMsg.senderId,
+          content: newMsg.text,
+          createdAt: newMsg.createdAt
+        }]);
+      }
+    } catch (e: any) {
+      console.error('Failed to log session', e);
+      alert('Lỗi: ' + (e.response?.data?.message || 'Không thể hoàn thành buổi tập. Vui lòng thử lại.'));
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
+  const handleConfirmSession = (wsId: string, sessionNum: number) => {
+    const key = `${wsId}-${sessionNum}`;
+    if (!confirmedSessions.includes(key)) {
+      const newConfirmed = [...confirmedSessions, key];
+      setConfirmedSessions(newConfirmed);
+      localStorage.setItem('lockedin_confirmed_sessions', JSON.stringify(newConfirmed));
+      
+      // Update backend / local stats
+      incrementWorkspaceSession(wsId);
+    }
+  };
+
+  // Initialize selectedWorkspace with query param if present, else first workspace
+  useEffect(() => {
+    if (displayWorkspaces.length > 0) {
+      if (workspaceIdParam) {
+        const found = displayWorkspaces.find(w => w.id === workspaceIdParam);
+        if (found) {
+          setSelectedWorkspace(found);
+          return;
+        }
+      }
+      if (bookingIdParam) {
+        const found = displayWorkspaces.find(w => w.bookingId === bookingIdParam);
+        if (found) {
+          setSelectedWorkspace(found);
+          return;
+        }
+      }
+      if (!selectedWorkspace) {
+        setSelectedWorkspace(displayWorkspaces[0]);
+      }
+    }
+  }, [displayWorkspaces, selectedWorkspace, bookingIdParam, workspaceIdParam]);
 
   // Load details whenever selectedWorkspace changes
   const loadWorkspaceDetails = async (wsId: string) => {
     if (!wsId) return;
+
+    if (wsId.startsWith('ws-mock')) {
+      setConversation({ id: 'conv-mock-active', workspaceId: 'ws-mock-active' });
+      const mockMsgs = getMockMessages(wsId).map(m => ({
+        id: m.id,
+        conversationId: 'conv-mock-active',
+        senderUserId: m.senderId === 'pt-mock-1' ? (currentUser?.role === 'pt' ? currentUser?.id : 'pt-mock-1') : (currentUser?.role === 'pt' ? 'cust-mock-2' : currentUser?.id || 'cust-me'),
+        senderName: m.senderName,
+        content: m.text,
+        createdAt: m.createdAt
+      }));
+      setMessages(mockMsgs);
+      setUseMockChat(true);
+      setMealPlansList([
+        {
+          id: 'meal-plan-mock-1',
+          workspaceId: 'ws-mock-active',
+          title: 'Thực Đơn AI: Tăng Cơ & Sức Mạnh',
+          contentJson: JSON.stringify({
+            dailyCalories: 2500,
+            proteinGrams: 150,
+            carbGrams: 280,
+            fatGrams: 70,
+            days: [
+              {
+                day: 1,
+                meals: [
+                  {
+                    mealType: 'Bữa Sáng (07:30)',
+                    foods: [
+                      { name: 'Phở bò chín', quantity: '1 tô lớn', calories: 550, protein: 25, carbs: 65, fat: 18 },
+                      { name: 'Trứng gà luộc', quantity: '2 quả', calories: 150, protein: 13, carbs: 1, fat: 10 }
+                    ]
+                  },
+                  {
+                    mealType: 'Bữa Phụ Sáng (10:00)',
+                    foods: [
+                      { name: 'Chuối gia', quantity: '1 quả lớn', calories: 100, protein: 1, carbs: 25, fat: 0 },
+                      { name: 'Sữa tươi không đường', quantity: '200ml', calories: 120, protein: 7, carbs: 10, fat: 6 }
+                    ]
+                  },
+                  {
+                    mealType: 'Bữa Trưa (12:30)',
+                    foods: [
+                      { name: 'Cơm trắng', quantity: '2 chén', calories: 400, protein: 8, carbs: 88, fat: 1 },
+                      { name: 'Ức gà áp chảo', quantity: '150g', calories: 250, protein: 45, carbs: 0, fat: 5 },
+                      { name: 'Bông cải xanh luộc', quantity: '100g', calories: 35, protein: 3, carbs: 7, fat: 0 }
+                    ]
+                  },
+                  {
+                    mealType: 'Bữa Phụ Chiều - Trước Tập (16:00)',
+                    foods: [
+                      { name: 'Bánh mì đen', quantity: '2 lát', calories: 160, protein: 6, carbs: 32, fat: 2 },
+                      { name: 'Lòng trắng trứng', quantity: '4 quả', calories: 68, protein: 16, carbs: 0, fat: 0 }
+                    ]
+                  },
+                  {
+                    mealType: 'Bữa Tối (19:30)',
+                    foods: [
+                      { name: 'Cơm trắng', quantity: '1.5 chén', calories: 300, protein: 6, carbs: 66, fat: 1 },
+                      { name: 'Cá hồi áp chảo', quantity: '120g', calories: 220, protein: 25, carbs: 0, fat: 12 },
+                      { name: 'Rau cải ngọt xào tỏi', quantity: '1 đĩa', calories: 80, protein: 2, carbs: 5, fat: 6 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }),
+          isActive: true,
+          source: 1,
+          createdAt: new Date().toISOString()
+        }
+      ]);
+      setLoadingMessages(false);
+      setLoadingMealPlan(false);
+      return;
+    }
+
     let conv: any = null;
     try {
       setLoadingMessages(true);
@@ -61,7 +271,7 @@ const WorkspacePage: React.FC = () => {
         setConversation(conv);
       } else {
         // Conversation doesn't exist yet, try to create it via bookingId
-        const ws = workspaces.find(w => w.id === wsId);
+        const ws = displayWorkspaces.find(w => w.id === wsId);
         if (ws?.bookingId) {
           const createRes = await api.post(`/conversations/booking/${ws.bookingId}`);
           if (createRes.data?.success && createRes.data.data) {
@@ -71,15 +281,23 @@ const WorkspacePage: React.FC = () => {
         }
       }
 
-      // 2. Load messages if conversation is found
       if (conv) {
         try {
           const msgRes = await api.get(`/conversations/${conv.id}/messages`);
-          if (msgRes.data?.success) {
-            setMessages(msgRes.data.data || []);
+          if (msgRes.data?.success && msgRes.data.data && msgRes.data.data.length > 0) {
+            setMessages(msgRes.data.data);
             setUseMockChat(false);
           } else {
-            throw new Error('Fallback to mock');
+            setUseMockChat(true);
+            const mockMsgs = getMockMessages(wsId).map(m => ({
+              id: m.id,
+              conversationId: conv.id,
+              senderUserId: m.senderId === 'pt-1' || m.senderId === 'pt-mock-1' ? selectedWorkspace?.ptId : m.senderId,
+              senderName: m.senderName,
+              content: m.text,
+              createdAt: m.createdAt
+            }));
+            setMessages(mockMsgs);
           }
         } catch (msgErr) {
           console.warn('Backend messages API failed, falling back to mock messages:', msgErr);
@@ -87,7 +305,7 @@ const WorkspacePage: React.FC = () => {
           const mockMsgs = getMockMessages(wsId).map(m => ({
             id: m.id,
             conversationId: conv.id,
-            senderUserId: m.senderId === 'pt-1' ? selectedWorkspace?.ptId : m.senderId,
+            senderUserId: m.senderId === 'pt-1' || m.senderId === 'pt-mock-1' ? selectedWorkspace?.ptId : m.senderId,
             senderName: m.senderName,
             content: m.text,
             createdAt: m.createdAt
@@ -108,12 +326,132 @@ const WorkspacePage: React.FC = () => {
       setLoadingMealPlan(true);
       // 3. Load meal plans
       const mealRes = await api.get(`/meal-plans/workspace/${wsId}`);
-      if (mealRes.data?.success) {
-        setMealPlansList(mealRes.data.data || []);
+      if (mealRes.data?.success && mealRes.data.data && mealRes.data.data.length > 0) {
+        setMealPlansList(mealRes.data.data);
+      } else {
+        setMealPlansList([
+          {
+            id: 'meal-plan-mock-1',
+            workspaceId: wsId,
+            title: 'Thực Đơn AI: Tăng Cơ & Sức Mạnh',
+            contentJson: JSON.stringify({
+              dailyCalories: 2500,
+              proteinGrams: 150,
+              carbGrams: 280,
+              fatGrams: 70,
+              days: [
+                {
+                  day: 1,
+                  meals: [
+                    {
+                      mealType: 'Bữa Sáng (07:30)',
+                      foods: [
+                        { name: 'Phở bò chín', quantity: '1 tô lớn', calories: 550, protein: 25, carbs: 65, fat: 18 },
+                        { name: 'Trứng gà luộc', quantity: '2 quả', calories: 150, protein: 13, carbs: 1, fat: 10 }
+                      ]
+                    },
+                    {
+                      mealType: 'Bữa Phụ Sáng (10:00)',
+                      foods: [
+                        { name: 'Chuối gia', quantity: '1 quả lớn', calories: 100, protein: 1, carbs: 25, fat: 0 },
+                        { name: 'Sữa tươi không đường', quantity: '200ml', calories: 120, protein: 7, carbs: 10, fat: 6 }
+                      ]
+                    },
+                    {
+                      mealType: 'Bữa Trưa (12:30)',
+                      foods: [
+                        { name: 'Cơm trắng', quantity: '2 chén', calories: 400, protein: 8, carbs: 88, fat: 1 },
+                        { name: 'Ức gà áp chảo', quantity: '150g', calories: 250, protein: 45, carbs: 0, fat: 5 },
+                        { name: 'Bông cải xanh luộc', quantity: '100g', calories: 35, protein: 3, carbs: 7, fat: 0 }
+                      ]
+                    },
+                    {
+                      mealType: 'Bữa Phụ Chiều - Trước Tập (16:00)',
+                      foods: [
+                        { name: 'Bánh mì đen', quantity: '2 lát', calories: 160, protein: 6, carbs: 32, fat: 2 },
+                        { name: 'Lòng trắng trứng', quantity: '4 quả', calories: 68, protein: 16, carbs: 0, fat: 0 }
+                      ]
+                    },
+                    {
+                      mealType: 'Bữa Tối (19:30)',
+                      foods: [
+                        { name: 'Cơm trắng', quantity: '1.5 chén', calories: 300, protein: 6, carbs: 66, fat: 1 },
+                        { name: 'Cá hồi áp chảo', quantity: '120g', calories: 220, protein: 25, carbs: 0, fat: 12 },
+                        { name: 'Rau cải ngọt xào tỏi', quantity: '1 đĩa', calories: 80, protein: 2, carbs: 5, fat: 6 }
+                      ]
+                    }
+                  ]
+                }
+              ]
+            }),
+            isActive: true,
+            source: 1,
+            createdAt: new Date().toISOString()
+          }
+        ]);
       }
     } catch (e) {
       console.error('Error loading meal plans:', e);
-      setMealPlansList([]);
+      setMealPlansList([
+        {
+          id: 'meal-plan-mock-1',
+          workspaceId: wsId,
+          title: 'Thực Đơn AI: Tăng Cơ & Sức Mạnh',
+          contentJson: JSON.stringify({
+            dailyCalories: 2500,
+            proteinGrams: 150,
+            carbGrams: 280,
+            fatGrams: 70,
+            days: [
+              {
+                day: 1,
+                meals: [
+                  {
+                    mealType: 'Bữa Sáng (07:30)',
+                    foods: [
+                      { name: 'Phở bò chín', quantity: '1 tô lớn', calories: 550, protein: 25, carbs: 65, fat: 18 },
+                      { name: 'Trứng gà luộc', quantity: '2 quả', calories: 150, protein: 13, carbs: 1, fat: 10 }
+                    ]
+                  },
+                  {
+                    mealType: 'Bữa Phụ Sáng (10:00)',
+                    foods: [
+                      { name: 'Chuối gia', quantity: '1 quả lớn', calories: 100, protein: 1, carbs: 25, fat: 0 },
+                      { name: 'Sữa tươi không đường', quantity: '200ml', calories: 120, protein: 7, carbs: 10, fat: 6 }
+                    ]
+                  },
+                  {
+                    mealType: 'Bữa Trưa (12:30)',
+                    foods: [
+                      { name: 'Cơm trắng', quantity: '2 chén', calories: 400, protein: 8, carbs: 88, fat: 1 },
+                      { name: 'Ức gà áp chảo', quantity: '150g', calories: 250, protein: 45, carbs: 0, fat: 5 },
+                      { name: 'Bông cải xanh luộc', quantity: '100g', calories: 35, protein: 3, carbs: 7, fat: 0 }
+                    ]
+                  },
+                  {
+                    mealType: 'Bữa Phụ Chiều - Trước Tập (16:00)',
+                    foods: [
+                      { name: 'Bánh mì đen', quantity: '2 lát', calories: 160, protein: 6, carbs: 32, fat: 2 },
+                      { name: 'Lòng trắng trứng', quantity: '4 quả', calories: 68, protein: 16, carbs: 0, fat: 0 }
+                    ]
+                  },
+                  {
+                    mealType: 'Bữa Tối (19:30)',
+                    foods: [
+                      { name: 'Cơm trắng', quantity: '1.5 chén', calories: 300, protein: 6, carbs: 66, fat: 1 },
+                      { name: 'Cá hồi áp chảo', quantity: '120g', calories: 220, protein: 25, carbs: 0, fat: 12 },
+                      { name: 'Rau cải ngọt xào tỏi', quantity: '1 đĩa', calories: 80, protein: 2, carbs: 5, fat: 6 }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }),
+          isActive: true,
+          source: 1,
+          createdAt: new Date().toISOString()
+        }
+      ]);
     } finally {
       setLoadingMealPlan(false);
     }
@@ -340,23 +678,25 @@ const WorkspacePage: React.FC = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-64px)] bg-brand-black flex overflow-hidden">
+    <div className="w-full bg-brand-black py-4 h-[calc(100vh-70px)] flex flex-col mt-[70px]">
+      <div className="section-container flex-1 flex flex-col h-full overflow-hidden">
+        <div className="flex-1 flex bg-brand-dark border border-brand-border overflow-hidden h-full">
       {/* Workspace Sidebar / Conversations List */}
       <aside className="w-72 flex-shrink-0 bg-brand-dark border-r border-brand-border flex flex-col hidden md:flex">
         <div className="px-5 py-5 border-b border-brand-border">
           <p className="section-label">
-            {currentUser?.role === 'pt' ? 'Danh Sách Học Viên' : 'Danh Sách Lớp Học'}
+            {currentUser?.role === 'pt' ? 'Danh Sách Học Viên' : 'Danh Sách Trò Chuyện'}
           </p>
-          <h2 className="font-montserrat font-bold text-xl text-white uppercase tracking-wider mt-1">LỚP HỌC CHI TIẾT</h2>
+          <h2 className="font-montserrat font-bold text-xl text-white uppercase tracking-wider mt-1">TRÒ CHUYỆN CHI TIẾT</h2>
         </div>
 
         <div className="flex-1 overflow-y-auto">
-          {workspaces.length === 0 ? (
+          {displayWorkspaces.length === 0 ? (
             <div className="p-5 text-center text-white/30 text-xs">
               {currentUser?.role === 'pt' ? 'Chưa có học viên nào hoạt động' : 'Chưa có khóa học nào hoạt động'}
             </div>
           ) : (
-            workspaces.map((ws) => {
+            displayWorkspaces.map((ws) => {
               const isActive = selectedWorkspace && ws.id === selectedWorkspace.id;
               const name = currentUser?.role === 'pt' ? ws.customerName : ws.ptName;
               const initials = name ? name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'WS';
@@ -419,16 +759,23 @@ const WorkspacePage: React.FC = () => {
               {currentUser?.role === 'pt' && selectedWorkspace.status === 'active' && (
                 <button
                   onClick={() => {
-                    if (window.confirm(`Xác nhận hoàn thành buổi học thứ ${selectedWorkspace.sessionsCompleted + 1}?`)) {
-                      incrementWorkspaceSession(selectedWorkspace.id);
+                    const nextSess = selectedWorkspace.sessionsCompleted + 1;
+                    if (nextSess > selectedWorkspace.sessionsTotal) {
+                      alert("Khóa học đã hoàn thành tất cả các buổi!");
+                      return;
+                    }
+                    if (window.confirm(`Gửi yêu cầu hoàn thành (Checkout) buổi tập thứ ${nextSess}?`)) {
+                      sendCheckoutRequest(selectedWorkspace.id, nextSess);
                     }
                   }}
                   className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold uppercase tracking-wider cursor-pointer border border-brand-red bg-brand-red/10 text-brand-red hover:bg-brand-red hover:text-white transition-all duration-200"
                 >
                   <Plus size={12} />
-                  + Buổi Tập
+                  + Yêu Cầu Checkout (Buổi {selectedWorkspace.sessionsCompleted + 1})
                 </button>
               )}
+
+
 
               {/* Customer Action: Dispute */}
               {currentUser?.role === 'customer' && selectedWorkspace.status === 'active' && (
@@ -474,6 +821,84 @@ const WorkspacePage: React.FC = () => {
               ) : (
                 messages.map((msg) => {
                   const isMe = msg.senderUserId === currentUser?.id;
+                  const checkoutMatch = msg.content.match(/^\[CheckoutSession:(\d+):(.*)\]$/);
+                  
+                  if (checkoutMatch) {
+                    const sessionNum = parseInt(checkoutMatch[1]);
+                    const dateStr = checkoutMatch[2];
+                    const confirmedKey = `${selectedWorkspace.id}-${sessionNum}`;
+                    const isConfirmed = confirmedSessions.includes(confirmedKey);
+                    const isNextSession = sessionNum === selectedWorkspace.sessionsCompleted + 1;
+                    const isPastSession = sessionNum <= selectedWorkspace.sessionsCompleted;
+                    
+                    return (
+                      <div key={msg.id} className="flex justify-center my-4 w-full">
+                        <div className="bg-brand-dark border border-brand-red/30 p-5 rounded-lg max-w-md w-full shadow-lg shadow-brand-red/5 flex flex-col items-center text-center gap-3 relative overflow-hidden">
+                          {/* Glow decoration */}
+                          <div className="absolute -top-12 -left-12 w-24 h-24 bg-brand-red/10 rounded-full blur-xl pointer-events-none" />
+                          <div className="absolute -bottom-12 -right-12 w-24 h-24 bg-brand-red/10 rounded-full blur-xl pointer-events-none" />
+                          
+                          <div className="flex items-center justify-center w-12 h-12 rounded-full bg-brand-red/10 border border-brand-red/30 text-brand-red">
+                            <Dumbbell size={20} className={!isConfirmed && isNextSession ? "animate-pulse" : ""} />
+                          </div>
+                          
+                          <div>
+                            <h4 className="font-montserrat font-bold text-xs text-white uppercase tracking-wider">
+                              🔔 YÊU CẦU CHECKOUT BUỔI TẬP
+                            </h4>
+                            <p className="text-white/60 text-[11px] mt-1">
+                              Xác nhận hoàn thành <strong>Buổi tập thứ {sessionNum}</strong>
+                            </p>
+                            <span className="text-[9px] text-white/30 block mt-0.5 font-mono">Tạo ngày: {dateStr}</span>
+                          </div>
+                          
+                          {/* Clickable Number */}
+                          <div className="my-2">
+                            {isConfirmed || isPastSession ? (
+                              <button
+                                disabled
+                                className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/30 text-green-500 flex flex-col items-center justify-center cursor-not-allowed"
+                              >
+                                <span className="text-base font-bold font-mono leading-none">{sessionNum}</span>
+                                <span className="text-[8px] uppercase tracking-wider font-bold mt-1">XONG</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() => handleConfirmSession(selectedWorkspace.id, sessionNum)}
+                                disabled={!isNextSession}
+                                className={`w-14 h-14 rounded-full flex flex-col items-center justify-center transition-all duration-300 ${
+                                  isNextSession
+                                    ? 'bg-brand-red/20 border border-brand-red text-white hover:bg-brand-red hover:text-white hover:scale-105 cursor-pointer shadow-md shadow-brand-red/20'
+                                    : 'bg-brand-surface border border-brand-border text-white/20 cursor-not-allowed'
+                                }`}
+                                title={isNextSession ? "Nhấn vào số để xác nhận hoàn thành" : `Cần hoàn thành buổi tập thứ ${selectedWorkspace.sessionsCompleted + 1} trước`}
+                              >
+                                <span className="text-base font-bold font-mono leading-none">{sessionNum}</span>
+                                <span className="text-[8px] uppercase tracking-wider font-bold mt-1">XÁC NHẬN</span>
+                              </button>
+                            )}
+                          </div>
+                          
+                          <div className="text-[10px]">
+                            {isConfirmed || isPastSession ? (
+                              <span className="text-green-500 font-semibold">
+                                ✓ Đã hoàn thành
+                              </span>
+                            ) : isNextSession ? (
+                              <span className="text-brand-red font-semibold animate-pulse">
+                                ● Đang chờ xác nhận (Nhấp vào số)
+                              </span>
+                            ) : (
+                              <span className="text-white/30 italic">
+                                Chưa thể xác nhận (Chưa tới lượt)
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
                   return (
                     <div key={msg.id} className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}>
                       <div className={`max-w-[70%] flex flex-col gap-1 ${isMe ? 'items-end' : 'items-start'}`}>
@@ -719,16 +1144,18 @@ const WorkspacePage: React.FC = () => {
           </div>
         </main>
       ) : (
-        <main className="flex-1 flex flex-col items-center justify-center text-white/40 bg-brand-black p-8">
+        <div className="flex-1 flex flex-col items-center justify-center text-white/40 bg-brand-black p-8">
           <Dumbbell size={48} className="text-brand-border mb-4 animate-pulse" />
-          <h2 className="font-montserrat font-bold text-lg text-white uppercase tracking-wider">Không Tìm Thấy Không Gian Lớp Học</h2>
+          <h2 className="font-montserrat font-bold text-lg text-white uppercase tracking-wider">Không Tìm Thấy Không Gian Trò Chuyện</h2>
           <p className="text-xs text-white/30 text-center max-w-sm mt-2">
             {currentUser?.role === 'pt'
               ? 'Bạn chưa có học viên nào đang hoạt động. Khi học viên đăng ký gói tập của bạn và thanh toán thành công, không gian trao đổi sẽ tự động xuất hiện tại đây!'
               : 'Bạn chưa đăng ký khóa tập nào đang hoạt động hoặc cuộc giao dịch chưa được HLV phê duyệt. Hãy đăng ký khóa học ở phần Tìm PT!'}
           </p>
-        </main>
+        </div>
       )}
+        </div>
+      </div>
 
       {/* PT AI Meal Plan Modal */}
       {showCreatePlanModal && (
@@ -814,7 +1241,7 @@ const WorkspacePage: React.FC = () => {
           <div className="bg-brand-dark border-2 border-brand-border p-6 w-full max-w-md">
             <div className="flex items-center gap-2 mb-4">
               <span className="w-2.5 h-2.5 bg-brand-red rounded-full animate-ping" />
-              <h3 className="font-montserrat font-bold text-lg text-white uppercase tracking-wider">Khiếu Nại Lớp Học</h3>
+              <h3 className="font-montserrat font-bold text-lg text-white uppercase tracking-wider">Khiếu Nại Khóa Học</h3>
             </div>
 
             <form

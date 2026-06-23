@@ -32,7 +32,7 @@ const AdminHome: React.FC = () => {
     loadData();
   }, [ptVerifications, disputes]);
 
-  const pendingPTs = ptVerifications.filter(pt => pt.verificationStatus === 1);
+  const pendingPTs = ptVerifications.filter(pt => pt.verificationStatus === 1 || pt.verificationStatus === 2);
   const openDisputes = disputes.filter(d => d.status === 'Pending');
 
   const totalRevenue = dashboardData ? dashboardData.totalRevenue : 95000000;

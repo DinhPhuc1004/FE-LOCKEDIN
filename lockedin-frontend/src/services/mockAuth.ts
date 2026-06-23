@@ -35,9 +35,9 @@ export interface User {
 const DEFAULT_USERS: User[] = [
   {
     id: 'cust-1',
-    email: 'customer@lockedin.fit',
+    email: 'usertest@gmail.com',
     role: 'customer',
-    fullName: 'Jane Doe',
+    fullName: 'Customer Test Account',
     phoneNumber: '0987654321',
     avatar: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
     isEmailVerified: true,
@@ -49,16 +49,16 @@ const DEFAULT_USERS: User[] = [
   },
   {
     id: 'pt-1',
-    email: 'alex.pt@lockedin.fit',
+    email: 'pttest@gmail.com',
     role: 'pt',
-    fullName: 'Coach Alex Rivera',
+    fullName: 'PT Test Account',
     phoneNumber: '0912345678',
     avatar: 'https://images.unsplash.com/photo-1568602471122-7832951cc4c5?auto=format&fit=crop&q=80&w=200',
     isEmailVerified: true,
     bio: 'Certified Strength Coach & Nutrition Specialist. 8+ years helping clients build sustainable physical habits.',
     specialization: ['Weight Loss', 'Hypertrophy', 'Strength Conditioning'],
     experienceYears: 8,
-    contactInfo: 'alex.rivera@pt.lockedin.fit | Zalo: 0912345678',
+    contactInfo: 'pttest@gmail.com | Zalo: 0912345678',
     isVerified: true,
     verificationStatus: 'verified'
   },
@@ -84,9 +84,9 @@ const DEFAULT_USERS: User[] = [
   },
   {
     id: 'admin-1',
-    email: 'admin@lockedin.fit',
+    email: 'admin@lockedin.vn',
     role: 'admin',
-    fullName: 'System Overseer',
+    fullName: 'LockedIn Admin',
     isEmailVerified: true
   }
 ];

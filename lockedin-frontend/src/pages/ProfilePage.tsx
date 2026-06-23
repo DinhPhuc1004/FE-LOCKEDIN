@@ -157,14 +157,12 @@ const ProfilePage: React.FC = () => {
   const tabsList = getTabs();
   const quickStats = getQuickStats();
 
-  // PT Documents state
   const [documents, setDocuments] = useState<any[]>([]);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [uploadingDoc, setUploadingDoc] = useState(false);
-  const [personalIdUrl, setPersonalIdUrl] = useState('');
-  const [certificateUrl, setCertificateUrl] = useState('');
-  const [uploadingPersonalId, setUploadingPersonalId] = useState(false);
-  const [uploadingCertificate, setUploadingCertificate] = useState(false);
+  const [personalIdFile, setPersonalIdFile] = useState<File | null>(null);
+  const [certificateFile, setCertificateFile] = useState<File | null>(null);
+  const { requestVerification } = useAuth();
 
   // PT Settlements state
   const [ptSettlements, setPtSettlements] = useState<any[]>([]);
@@ -287,7 +285,7 @@ const ProfilePage: React.FC = () => {
         </div>
 
         {/* Profile Info Header Section (Overlapping Cover) */}
-        <div className="section-container relative z-10 -mt-16 md:-mt-20 mb-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 w-full relative z-10 -mt-16 md:-mt-20 mb-8">
           <div className="flex flex-col md:flex-row items-center gap-6 w-full text-center md:text-left">
             {/* Profile Avatar */}
             <div className="relative w-32 h-32 md:w-40 md:h-40 flex-shrink-0 z-10">
@@ -310,6 +308,17 @@ const ProfilePage: React.FC = () => {
                   if (!file) return;
                   const formData = new FormData();
                   formData.append('file', file);
+                  
+                  const handleUpdateAvatar = async (url: string) => {
+                    const updateRes = await api.put('/users/me/avatar', { avatarUrl: url });
+                    if (updateRes.data?.success) {
+                      alert('Cập nhật ảnh đại diện thành công!');
+                      window.location.reload();
+                    } else {
+                      alert('Cập nhật ảnh đại diện thất bại.');
+                    }
+                  };
+
                   try {
                     const uploadRes = await api.post('/uploads/image?folder=avatars', formData, {
                       headers: {
@@ -318,19 +327,22 @@ const ProfilePage: React.FC = () => {
                     });
                     if (uploadRes.data?.success) {
                       const fileUrl = uploadRes.data.data.secureUrl || uploadRes.data.data.url;
-                      const updateRes = await api.put('/users/me/avatar', { avatarUrl: fileUrl });
-                      if (updateRes.data?.success) {
-                        alert('Cập nhật ảnh đại diện thành công!');
-                        window.location.reload();
-                      } else {
-                        alert('Cập nhật ảnh đại diện thất bại.');
-                      }
+                      await handleUpdateAvatar(fileUrl);
                     } else {
-                      alert(uploadRes.data?.message || 'Tải ảnh lên thất bại.');
+                      throw new Error('Upload failed');
                     }
                   } catch (err) {
-                    console.error(err);
-                    alert('Cập nhật ảnh đại diện thất bại.');
+                    console.warn("Upload API failed, falling back to Base64:", err);
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onloadend = async () => {
+                      try {
+                        await handleUpdateAvatar(reader.result as string);
+                      } catch (updateErr) {
+                        console.error(updateErr);
+                        alert('Cập nhật ảnh đại diện thất bại.');
+                      }
+                    };
                   }
                 }}
               />
@@ -373,7 +385,7 @@ const ProfilePage: React.FC = () => {
 
         {/* Tab Navigation Menu (Integrated Below Banner) */}
         <div className="bg-brand-surface border-b border-brand-border sticky top-0 z-20">
-          <div className="section-container flex overflow-x-auto w-full max-w-full scrollbar-none gap-2">
+          <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 w-full flex overflow-x-auto scrollbar-none gap-2">
             {tabsList.map((tab) => {
               const Icon = tab.icon;
               return (
@@ -395,7 +407,7 @@ const ProfilePage: React.FC = () => {
         </div>
 
         {/* Main Content Area */}
-        <div className="section-container py-8 md:py-12">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 w-full py-8 md:py-12">
           <div className="grid lg:grid-cols-4 gap-8">
             {/* Left Column: Side info stats */}
             <div className="lg:col-span-1 flex flex-col gap-6">
@@ -527,13 +539,13 @@ const ProfilePage: React.FC = () => {
                     <h4 className="font-semibold text-white mb-4 uppercase text-xs tracking-wider text-brand-red">Tải lên hồ sơ minh chứng mới</h4>
                     <div className="grid md:grid-cols-2 gap-4 mb-4">
                       <div>
-                        <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Ảnh CCCD / Passport (Bắt buộc)</label>
-                        {personalIdUrl ? (
+                        <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Ảnh CCCD / Hộ Chiếu</label>
+                        {personalIdFile ? (
                           <div className="relative border border-brand-border bg-brand-surface p-2 flex items-center justify-between h-12">
-                            <span className="text-white/60 text-xs truncate max-w-[80%]">{personalIdUrl}</span>
+                            <span className="text-white/60 text-xs truncate max-w-[80%]">{personalIdFile.name}</span>
                             <button
                               type="button"
-                              onClick={() => setPersonalIdUrl('')}
+                              onClick={() => setPersonalIdFile(null)}
                               className="text-brand-red hover:text-white text-xs uppercase font-bold tracking-wider cursor-pointer"
                             >
                               Xóa
@@ -544,28 +556,10 @@ const ProfilePage: React.FC = () => {
                             <input
                               type="file"
                               accept="image/*"
-                              disabled={uploadingPersonalId}
-                              onChange={async (e) => {
+                              disabled={uploadingDoc}
+                              onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (!file) return;
-                                const formData = new FormData();
-                                formData.append('file', file);
-                                setUploadingPersonalId(true);
-                                try {
-                                  const res = await api.post('/uploads/image?folder=documents', formData, {
-                                    headers: { 'Content-Type': 'multipart/form-data' }
-                                  });
-                                  if (res.data?.success) {
-                                    setPersonalIdUrl(res.data.data.secureUrl || res.data.data.url);
-                                  } else {
-                                    alert(res.data?.message || 'Tải ảnh lên thất bại.');
-                                  }
-                                } catch (err) {
-                                  console.error(err);
-                                  alert('Tải ảnh lên thất bại.');
-                                } finally {
-                                  setUploadingPersonalId(false);
-                                }
+                                if (file) setPersonalIdFile(file);
                               }}
                               className="hidden"
                               id="personal-id-file-input"
@@ -573,10 +567,10 @@ const ProfilePage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => document.getElementById('personal-id-file-input')?.click()}
-                              disabled={uploadingPersonalId}
+                              disabled={uploadingDoc}
                               className="w-full flex items-center justify-center gap-2 border border-dashed border-white/20 hover:border-brand-red bg-brand-surface hover:bg-brand-surface/50 text-white/60 hover:text-white py-3 px-4 text-xs font-semibold uppercase tracking-wider transition-colors duration-200 cursor-pointer h-12"
                             >
-                              {uploadingPersonalId ? 'Đang tải lên...' : 'Chọn file ảnh CCCD'}
+                              Chọn file ảnh CCCD
                             </button>
                           </div>
                         )}
@@ -584,12 +578,12 @@ const ProfilePage: React.FC = () => {
 
                       <div>
                         <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Chứng chỉ nghề HLV / Bằng cấp liên quan</label>
-                        {certificateUrl ? (
+                        {certificateFile ? (
                           <div className="relative border border-brand-border bg-brand-surface p-2 flex items-center justify-between h-12">
-                            <span className="text-white/60 text-xs truncate max-w-[80%]">{certificateUrl}</span>
+                            <span className="text-white/60 text-xs truncate max-w-[80%]">{certificateFile.name}</span>
                             <button
                               type="button"
-                              onClick={() => setCertificateUrl('')}
+                              onClick={() => setCertificateFile(null)}
                               className="text-brand-red hover:text-white text-xs uppercase font-bold tracking-wider cursor-pointer"
                             >
                               Xóa
@@ -600,28 +594,10 @@ const ProfilePage: React.FC = () => {
                             <input
                               type="file"
                               accept="image/*"
-                              disabled={uploadingCertificate}
-                              onChange={async (e) => {
+                              disabled={uploadingDoc}
+                              onChange={(e) => {
                                 const file = e.target.files?.[0];
-                                if (!file) return;
-                                const formData = new FormData();
-                                formData.append('file', file);
-                                setUploadingCertificate(true);
-                                try {
-                                  const res = await api.post('/uploads/image?folder=documents', formData, {
-                                    headers: { 'Content-Type': 'multipart/form-data' }
-                                  });
-                                  if (res.data?.success) {
-                                    setCertificateUrl(res.data.data.secureUrl || res.data.data.url);
-                                  } else {
-                                    alert(res.data?.message || 'Tải ảnh lên thất bại.');
-                                  }
-                                } catch (err) {
-                                  console.error(err);
-                                  alert('Tải ảnh lên thất bại.');
-                                } finally {
-                                  setUploadingCertificate(false);
-                                }
+                                if (file) setCertificateFile(file);
                               }}
                               className="hidden"
                               id="certificate-file-input"
@@ -629,10 +605,10 @@ const ProfilePage: React.FC = () => {
                             <button
                               type="button"
                               onClick={() => document.getElementById('certificate-file-input')?.click()}
-                              disabled={uploadingCertificate}
+                              disabled={uploadingDoc}
                               className="w-full flex items-center justify-center gap-2 border border-dashed border-white/20 hover:border-brand-red bg-brand-surface hover:bg-brand-surface/50 text-white/60 hover:text-white py-3 px-4 text-xs font-semibold uppercase tracking-wider transition-colors duration-200 cursor-pointer h-12"
                             >
-                              {uploadingCertificate ? 'Đang tải lên...' : 'Chọn file chứng chỉ'}
+                              Chọn file chứng chỉ
                             </button>
                           </div>
                         )}
@@ -640,26 +616,20 @@ const ProfilePage: React.FC = () => {
                     </div>
                     <button
                       onClick={async () => {
-                        if (!personalIdUrl) {
+                        if (!personalIdFile) {
                           alert('Vui lòng tải lên ảnh CCCD để xác minh danh tính!');
                           return;
                         }
                         setUploadingDoc(true);
                         try {
-                          await api.post('/pts/me/documents', {
-                            documentType: 1,
-                            fileUrl: personalIdUrl
-                          });
-                          if (certificateUrl) {
-                            await api.post('/pts/me/documents', {
-                              documentType: 2,
-                              fileUrl: certificateUrl
-                            });
-                          }
+                          await requestVerification(
+                            personalIdFile,
+                            certificateFile ? [certificateFile] : []
+                          );
                           
                           alert('Gửi hồ sơ minh chứng thành công! Đang chờ Admin xét duyệt.');
-                          setPersonalIdUrl('');
-                          setCertificateUrl('');
+                          setPersonalIdFile(null);
+                          setCertificateFile(null);
                           loadPtDocuments();
                         } catch (err) {
                           console.error('Failed to upload docs:', err);
@@ -968,13 +938,13 @@ const ProfilePage: React.FC = () => {
     <div className="min-h-screen bg-brand-black mobile-content-pad">
       {/* Page Header */}
       <div className="border-b border-brand-border bg-brand-dark">
-        <div className="section-container py-10">
+        <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 w-full py-10">
           <p className="section-label mb-2">Tài Khoản</p>
           <h1 className="page-title">Hồ Sơ Của Tôi</h1>
         </div>
       </div>
 
-      <div className="section-container py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-8 lg:px-12 w-full py-8">
         <div className="grid lg:grid-cols-4 gap-8">
           {/* Left Profile Card */}
           <div className="lg:col-span-1">
@@ -1004,6 +974,17 @@ const ProfilePage: React.FC = () => {
                       if (!file) return;
                       const formData = new FormData();
                       formData.append('file', file);
+
+                      const handleUpdateAvatar = async (url: string) => {
+                        const updateRes = await api.put('/users/me/avatar', { avatarUrl: url });
+                        if (updateRes.data?.success) {
+                          alert('Cập nhật ảnh đại diện thành công!');
+                          window.location.reload();
+                        } else {
+                          alert('Cập nhật ảnh đại diện thất bại.');
+                        }
+                      };
+
                       try {
                         const uploadRes = await api.post('/uploads/image?folder=avatars', formData, {
                           headers: {
@@ -1012,19 +993,22 @@ const ProfilePage: React.FC = () => {
                         });
                         if (uploadRes.data?.success) {
                           const fileUrl = uploadRes.data.data.secureUrl || uploadRes.data.data.url;
-                          const updateRes = await api.put('/users/me/avatar', { avatarUrl: fileUrl });
-                          if (updateRes.data?.success) {
-                            alert('Cập nhật ảnh đại diện thành công!');
-                            window.location.reload();
-                          } else {
-                            alert('Cập nhật ảnh đại diện thất bại.');
-                          }
+                          await handleUpdateAvatar(fileUrl);
                         } else {
-                          alert(uploadRes.data?.message || 'Tải ảnh lên thất bại.');
+                          throw new Error('Upload failed');
                         }
                       } catch (err) {
-                        console.error(err);
-                        alert('Cập nhật ảnh đại diện thất bại.');
+                        console.warn("Upload API failed, falling back to Base64:", err);
+                        const reader = new FileReader();
+                        reader.readAsDataURL(file);
+                        reader.onloadend = async () => {
+                          try {
+                            await handleUpdateAvatar(reader.result as string);
+                          } catch (updateErr) {
+                            console.error(updateErr);
+                            alert('Cập nhật ảnh đại diện thất bại.');
+                          }
+                        };
                       }
                     }}
                   />

@@ -39,4 +39,11 @@ public class WorkspacesController : ControllerBase
         var result = await _service.UpdateCourseNoteAsync(workspaceId, request);
         return Ok(result);
     }
+
+    [HttpPost("{workspaceId}/sessions")]
+    public async Task<IActionResult> LogSessionAsync(Guid workspaceId)
+    {
+        var result = await _service.LogSessionAsync(workspaceId);
+        return Ok(result);
+    }
 }

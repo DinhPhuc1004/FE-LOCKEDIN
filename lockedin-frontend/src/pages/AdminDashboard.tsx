@@ -46,7 +46,8 @@ const AdminDashboard: React.FC = () => {
     approvePTVerification, 
     rejectPTVerification, 
     releaseSettlement, 
-    resolveDisputeAction 
+    resolveDisputeAction,
+    refreshBackendData
   } = useData();
 
   const loadUsersList = async () => {
@@ -96,7 +97,7 @@ const AdminDashboard: React.FC = () => {
       const res = await api.post(`/admin/disputes/${disputeId}/under-review`);
       if (res.data?.success) {
         alert('Tranh chấp đã được chuyển sang trạng thái đang xem xét.');
-        window.location.reload();
+        refreshBackendData();
       }
     } catch (e) {
       console.error(e);
@@ -139,7 +140,7 @@ const AdminDashboard: React.FC = () => {
 
   const maxRevenue = Math.max(...MONTHLY_REVENUE.map((m) => m.value));
 
-  const pendingPTs = ptVerifications.filter(pt => pt.verificationStatus === 1);
+  const pendingPTs = ptVerifications.filter(pt => pt.verificationStatus === 1 || pt.verificationStatus === 2);
   const openDisputes = disputes.filter(d => d.status === 'Pending');
 
   const totalRevenueText = dashboardData 

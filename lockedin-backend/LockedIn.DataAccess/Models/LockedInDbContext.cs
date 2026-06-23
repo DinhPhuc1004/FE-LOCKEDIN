@@ -53,6 +53,8 @@ public partial class LockedInDbContext : DbContext
 
     public virtual DbSet<Workspace> Workspaces { get; set; }
 
+    public virtual DbSet<WorkspaceSession> WorkspaceSessions { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         if (!optionsBuilder.IsConfigured)
@@ -878,6 +880,32 @@ public partial class LockedInDbContext : DbContext
                 .HasForeignKey(d => d.PtProfileId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("fk_workspaces_pt_profile_id");
+        });
+
+        modelBuilder.Entity<WorkspaceSession>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK_workspace_sessions");
+
+            entity.ToTable("workspace_sessions");
+
+            entity.Property(e => e.Id)
+                .HasDefaultValueSql("(newid())")
+                .HasColumnName("id");
+
+            entity.Property(e => e.WorkspaceId).HasColumnName("workspace_id");
+
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("(sysutcdatetime())")
+                .HasColumnName("created_at");
+
+            entity.Property(e => e.UpdatedAt)
+                .HasColumnName("updated_at");
+
+            entity.HasOne(d => d.Workspace)
+                .WithMany(p => p.WorkspaceSessions)
+                .HasForeignKey(d => d.WorkspaceId)
+                .OnDelete(DeleteBehavior.Cascade)
+                .HasConstraintName("fk_workspace_sessions_workspace_id");
         });
 
         OnModelCreatingPartial(modelBuilder);

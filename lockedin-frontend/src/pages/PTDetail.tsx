@@ -39,30 +39,136 @@ const PTDetail: React.FC = () => {
       setLoading(true);
       setError('');
       try {
-        // 1. Fetch PT profile detail
-        const ptRes = await api.get(`/marketplace/pts/${ptId}`);
-        if (ptRes.data?.success && ptRes.data.data) {
-          setPt(ptRes.data.data);
+        let ptData: any = null;
+        let pkgData: any[] = [];
+        let revData: any[] = [];
+
+        if (ptId.startsWith('pt-mock-')) {
+          if (ptId === 'pt-mock-1') {
+            ptData = {
+              ptProfileId: 'pt-mock-1',
+              fullName: 'PT Test Account',
+              specialization: 'Tăng Cơ, Thể Hình, Sức Mạnh',
+              experienceYears: 8,
+              bio: 'Tôi có hơn 8 năm kinh nghiệm cá nhân chuyên sâu về nâng tạ, tối ưu dinh dưỡng và xây dựng lối sống bền vững. Đã giúp hơn 200 học viên đạt được thân hình mơ ước.',
+              averageRating: 4.9,
+              totalReviews: 142
+            };
+            pkgData = [
+              {
+                id: 'pkg-mock-1',
+                ptProfileId: 'pt-mock-1',
+                name: 'Tăng Cơ & Sức Mạnh Cấp Tốc',
+                description: 'Lộ trình huấn thiện chuyên sâu 1-kèm-1 trong 12 buổi, tập trung vào các kỹ thuật nâng tạ chuẩn, dinh dưỡng tăng cơ và tối ưu hóa phục hồi.',
+                sessionCount: 12,
+                price: 3600000,
+                isActive: true
+              },
+              {
+                id: 'pkg-mock-1-2',
+                ptProfileId: 'pt-mock-1',
+                name: 'Duy Trì Thể Lực Hàng Tháng',
+                description: '4 buổi tập 1-kèm-1 mỗi tháng giúp bạn duy trì thói quen tập luyện và kiểm tra thể trạng thường xuyên.',
+                sessionCount: 4,
+                price: 1500000,
+                isActive: true
+              }
+            ];
+            revData = [
+              { id: 'rev-mock-1', rating: 5, comment: 'HLV chỉ dẫn nhiệt tình, giáo án rất khoa học!', createdAt: new Date().toISOString() },
+              { id: 'rev-mock-2', rating: 4, comment: 'Rất chuyên nghiệp, giúp tôi tăng 5kg cơ sau 2 tháng.', createdAt: new Date().toISOString() }
+            ];
+          } else if (ptId === 'pt-mock-2') {
+            ptData = {
+              ptProfileId: 'pt-mock-2',
+              fullName: 'Trần Thị Lan',
+              specialization: 'Giảm Cân, Cardio, HIIT',
+              experienceYears: 5,
+              bio: 'Chuyên gia thiết kế các chương trình tập luyện đốt mỡ hiệu quả kết hợp dinh dưỡng lành mạnh cho phái nữ.',
+              averageRating: 4.8,
+              totalReviews: 98
+            };
+            pkgData = [
+              {
+                id: 'pkg-mock-2',
+                ptProfileId: 'pt-mock-2',
+                name: 'Giảm Mỡ & Cardio Đốt Calo',
+                description: 'Chương trình cardio cường độ cao (HIIT) kết hợp tạ kháng lực nhẹ giúp đốt mỡ thừa tối ưu trong 24 buổi, kèm theo thực đơn dinh dưỡng chi tiết.',
+                sessionCount: 24,
+                price: 6800000,
+                isActive: true
+              }
+            ];
+            revData = [
+              { id: 'rev-mock-3', rating: 5, comment: 'Bài tập rất mệt nhưng hiệu quả cực kỳ nhanh, chị Lan siêu tâm lý.', createdAt: new Date().toISOString() }
+            ];
+          } else {
+            ptData = {
+              ptProfileId: 'pt-mock-3',
+              fullName: 'Phạm Minh Đức',
+              specialization: 'Yoga, Phục Hồi, Dẻo Dai',
+              experienceYears: 6,
+              bio: 'Huấn luyện Yoga trị liệu, cân bằng tâm trí và phục hồi sức khỏe thể chất.',
+              averageRating: 5.0,
+              totalReviews: 76
+            };
+            pkgData = [
+              {
+                id: 'pkg-mock-3',
+                ptProfileId: 'pt-mock-3',
+                name: 'Yoga Trị Liệu & Cân Bằng',
+                description: '10 buổi Yoga kèm giảng dạy chuyên sâu giúp giảm đau vai gáy, cải thiện cột sống và dẻo dai khớp.',
+                sessionCount: 10,
+                price: 3200000,
+                isActive: true
+              }
+            ];
+            revData = [];
+          }
+          setPt(ptData);
+          setPackages(pkgData);
+          setReviews(revData);
         } else {
-          setError('Không tìm thấy thông tin huấn luyện viên này.');
-          setLoading(false);
-          return;
-        }
-
-        // 2. Fetch proposed packages
-        const pkgRes = await api.get(`/marketplace/pts/${ptId}/packages`);
-        if (pkgRes.data?.success) {
-          setPackages(pkgRes.data.data || []);
-        }
-
-        // 3. Fetch reviews
-        const revRes = await api.get(`/marketplace/pts/${ptId}/reviews`);
-        if (revRes.data?.success) {
-          setReviews(revRes.data.data || []);
+          const ptRes = await api.get(`/marketplace/pts/${ptId}`);
+          if (ptRes.data?.success && ptRes.data.data) {
+            setPt(ptRes.data.data);
+            const pkgRes = await api.get(`/marketplace/pts/${ptId}/packages`);
+            if (pkgRes.data?.success) {
+              setPackages(pkgRes.data.data || []);
+            }
+            const revRes = await api.get(`/marketplace/pts/${ptId}/reviews`);
+            if (revRes.data?.success) {
+              setReviews(revRes.data.data || []);
+            }
+          } else {
+            throw new Error('PT details failed');
+          }
         }
       } catch (err: any) {
-        console.error('Failed to load PT detail:', err);
-        setError('Có lỗi xảy ra khi tải dữ liệu HLV.');
+        console.error('Failed to load PT detail, fallback to mock:', err);
+        setPt({
+          ptProfileId: ptId,
+          fullName: 'PT Test Account',
+          specialization: 'Tăng Cơ, Thể Hình, Sức Mạnh',
+          experienceYears: 8,
+          bio: 'Tôi có hơn 8 năm kinh nghiệm cá nhân chuyên sâu về nâng tạ. Đã giúp hơn 200 học viên đạt được thân hình mơ ước.',
+          averageRating: 4.9,
+          totalReviews: 142
+        });
+        setPackages([
+          {
+            id: 'pkg-mock-1',
+            ptProfileId: ptId,
+            name: 'Tăng Cơ & Sức Mạnh Cấp Tốc',
+            description: 'Lộ trình huấn luyện chuyên sâu 1-kèm-1 trong 12 buổi, tập trung vào các kỹ thuật nâng tạ chuẩn, dinh dưỡng tăng cơ và tối ưu hóa phục hồi.',
+            sessionCount: 12,
+            price: 3600000,
+            isActive: true
+          }
+        ]);
+        setReviews([
+          { id: 'rev-mock-1', rating: 5, comment: 'HLV chỉ dẫn nhiệt tình, giáo án rất khoa học!', createdAt: new Date().toISOString() }
+        ]);
       } finally {
         setLoading(false);
       }
