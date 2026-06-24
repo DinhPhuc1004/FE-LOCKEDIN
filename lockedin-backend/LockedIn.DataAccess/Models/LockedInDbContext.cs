@@ -55,14 +55,6 @@ public partial class LockedInDbContext : DbContext
 
     public virtual DbSet<WorkspaceSession> WorkspaceSessions { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
-    {
-        if (!optionsBuilder.IsConfigured)
-        {
-            optionsBuilder.UseSqlServer("Server=localhost\\SQLEXPRESS;Database=LockedInDb;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True;");
-        }
-    }
-
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<AiUsageLog>(entity =>
