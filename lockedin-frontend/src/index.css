@@ -86,7 +86,7 @@
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2
            font-display font-bold text-sm uppercase tracking-wider
-           px-6 py-3 bg-brand-red text-white rounded-none
+           px-6 py-3 bg-brand-red text-white rounded-xl
            transition-all duration-200
            hover:bg-brand-red-dark active:scale-95
            focus:outline-none focus:ring-2 focus:ring-brand-red
@@ -96,9 +96,9 @@
   .btn-secondary {
     @apply inline-flex items-center justify-center gap-2
            font-display font-bold text-sm uppercase tracking-wider
-           px-6 py-3 bg-transparent text-white border border-white rounded-none
+           px-6 py-3 border border-brand-border text-white rounded-xl
            transition-all duration-200
-           hover:bg-white hover:text-black active:scale-95
+           hover:border-white/40 hover:bg-white/5 active:scale-95
            focus:outline-none focus:ring-2 focus:ring-white
            focus:ring-offset-2 focus:ring-offset-black cursor-pointer;
   }
@@ -106,14 +106,14 @@
   .btn-ghost {
     @apply inline-flex items-center justify-center gap-2
            font-display font-bold text-sm uppercase tracking-wider
-           px-4 py-2 bg-transparent text-brand-red rounded-none
+           px-4 py-2 bg-transparent text-brand-red rounded-xl
            transition-all duration-200
            hover:text-brand-red-light active:scale-95 cursor-pointer;
   }
 
-  /* ─── CARDS ───────────────────────────────────────────────────────── */
+  /* ─── CARDS ────────────────────────────────────────────────────────── */
   .card-dark {
-    @apply bg-brand-surface border border-brand-border rounded-none
+    @apply bg-brand-surface border border-brand-border rounded-2xl
            transition-all duration-300 hover:border-brand-red;
   }
 
@@ -121,7 +121,7 @@
   .input-dark {
     @apply w-full bg-brand-surface border border-brand-border
            font-sans font-normal text-white placeholder-brand-gray
-           px-4 py-3 text-sm rounded-none
+           px-4 py-3 text-sm rounded-xl
            focus:outline-none focus:border-brand-red
            transition-colors duration-200;
   }
@@ -197,6 +197,18 @@
     @apply inline-flex items-center
            font-display font-bold text-[9px] uppercase tracking-[0.18em]
            px-3 py-0.5 bg-white text-black;
+  }
+
+  .badge-yellow {
+    @apply inline-flex items-center
+           font-display font-bold text-[9px] uppercase tracking-[0.18em]
+           px-3 py-0.5 bg-yellow-500 text-black;
+  }
+
+  .badge-green {
+    @apply inline-flex items-center
+           font-display font-bold text-[9px] uppercase tracking-[0.18em]
+           px-3 py-0.5 bg-green-500 text-white;
   }
 
   .badge-gray {

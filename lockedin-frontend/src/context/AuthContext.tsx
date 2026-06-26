@@ -8,7 +8,8 @@ interface AuthContextType {
   currentUser: User | null;
   currentRole: UserRole | null;
   users: User[];
-  login: (email: string, password?: string) => Promise<boolean>;
+  login: (email: string, password?: string) => Promise<{ success: boolean; role?: UserRole }>;
+  googleLogin: (idToken: string, role?: UserRole) => Promise<{ success: boolean; role?: UserRole; message?: string }>;
   register: (fullName: string, email: string, role: UserRole, phone: string, password?: string) => Promise<User>;
   logout: () => void;
   updateProfile: (updatedData: Partial<User>) => Promise<void>;
@@ -159,7 +160,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUsers(loaded);
   };
 
-  const login = async (email: string, password?: string): Promise<boolean> => {
+  const login = async (email: string, password?: string): Promise<{ success: boolean; role?: UserRole }> => {
     try {
       const response = await api.post('/auth/login', {
         email,
@@ -244,12 +245,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.warn('Could not fetch detailed profile details:', profileError);
         }
 
-        return true;
+        return { success: true, role: mappedRole };
       }
-      return false;
+      return { success: false };
     } catch (e) {
       console.error('Error logging in:', e);
-      return false;
+      return { success: false };
+    }
+  };
+
+  const googleLogin = async (idToken: string, role?: UserRole) => {
+    try {
+      // role=1 is Customer
+      const payload: any = { idToken };
+      if (role) {
+        payload.role = role === 'pt' ? 2 : (role === 'customer' ? 1 : 3);
+      }
+      
+      const res = await api.post('/auth/google-login', payload);
+      if (res.data?.success) {
+        const { accessToken, refreshToken, role: returnedRoleNum } = res.data.data;
+        const mappedRole = returnedRoleNum === 1 ? 'customer' : (returnedRoleNum === 2 ? 'pt' : 'admin');
+        
+        localStorage.setItem('lockedin_access_token', accessToken);
+        localStorage.setItem('lockedin_refresh_token', refreshToken);
+        localStorage.setItem('lockedin_current_role', mappedRole);
+        
+        // Refresh page or trigger re-fetch logic here
+        window.location.reload(); 
+        return { success: true, role: mappedRole };
+      }
+      return { success: false, message: res.data?.message || 'Google login failed' };
+    } catch (error: any) {
+      console.error('Google login failed:', error);
+      return { success: false, message: error.response?.data?.message || 'Lỗi kết nối' };
     }
   };
 
@@ -437,6 +466,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         currentRole,
         users,
         login,
+        googleLogin,
         register,
         logout,
         updateProfile,

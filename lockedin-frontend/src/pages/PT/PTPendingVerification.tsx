@@ -101,7 +101,7 @@ const PTPendingVerification: React.FC = () => {
             </p>
             <button 
               onClick={handleReupload}
-              className="bg-brand-red text-white font-bold py-4 px-8 w-full hover:bg-brand-red/90 transition-colors"
+              className="bg-brand-red text-white font-bold py-4 px-8 w-full hover:bg-brand-red/90 transition-colors rounded-xl"
             >
               Cập nhật lại hồ sơ
             </button>

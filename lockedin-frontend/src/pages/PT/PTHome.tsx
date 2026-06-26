@@ -188,7 +188,7 @@ const PTHome: React.FC = () => {
                           </div>
                           <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
                             <div 
-                              className="bg-brand-red h-full transition-all duration-500" 
+                              className="bg-brand-red h-full transition-all duration-500 rounded-xl" 
                               style={{ width: `${progressPct}%` }}
                             />
                           </div>

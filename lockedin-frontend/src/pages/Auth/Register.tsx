@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, ArrowRight, User, Dumbbell } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 import logoImg from '../../assets/logo.png';
 
 const Register: React.FC = () => {
@@ -14,7 +15,7 @@ const Register: React.FC = () => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { register } = useAuth();
+  const { register, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   const [showTerms, setShowTerms] = useState(false);
@@ -65,25 +66,52 @@ const Register: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-black flex items-center justify-center p-8">
-      <div className="w-full max-w-lg">
-        {/* Logo */}
-        <div className="flex justify-center mb-10">
-          <Link to="/" className="hover:opacity-80 transition-opacity">
-            <img src={logoImg} alt="LockedIn Logo" className="h-20 w-auto object-contain" />
-          </Link>
-        </div>
+    <div 
+      className="min-h-screen flex relative"
+      style={{
+        backgroundImage: 'url("https://images.unsplash.com/photo-1517836357463-d25dfeac3438?q=80&w=2000&auto=format&fit=crop")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Global Overlay */}
+      <div className="absolute inset-0 bg-black/40" />
 
-        <div className="mb-8">
-          <p className="section-label mb-3">Bắt Đầu Ngay Hôm Nay</p>
-          <h1 className="font-montserrat font-black text-4xl text-white uppercase tracking-wider">Tạo Tài Khoản</h1>
+      {/* Left side text container */}
+      <div className="relative z-10 hidden lg:flex flex-1 flex-col justify-center p-16 xl:p-24">
+        <div>
+          <Link to="/" className="inline-block mb-12 hover:opacity-80 transition-opacity">
+            <img src={logoImg} alt="LockedIn Logo" className="h-12 w-auto object-contain drop-shadow-lg" />
+          </Link>
+          <div className="w-12 h-1 bg-brand-red mb-6 shadow-[0_0_10px_rgba(255,0,0,0.5)]" />
+          <h2 className="font-montserrat font-black text-6xl text-white uppercase leading-none tracking-tight mb-6 drop-shadow-xl">
+            BẮT ĐẦU<br />
+            <span className="text-brand-red drop-shadow-[0_0_15px_rgba(255,0,0,0.4)]">HÀNH TRÌNH</span><br />
+            CỦA BẠN
+          </h2>
+          <p className="text-white/90 text-lg leading-relaxed max-w-sm drop-shadow-md">
+            Tham gia cộng đồng LockedIn ngay hôm nay để tìm kiếm người đồng hành hoàn hảo cho mục tiêu của bạn.
+          </p>
         </div>
+      </div>
+
+      {/* Right side form container */}
+      <div className="relative z-10 w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-8">
+        <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/20 rounded-3xl p-6 lg:p-8 shadow-2xl">
+          <Link to="/" className="flex justify-center mb-6 lg:hidden hover:opacity-80 transition-opacity">
+            <img src={logoImg} alt="LockedIn Logo" className="h-10 w-auto object-contain" />
+          </Link>
+
+          <div className="mb-6 text-center">
+            <p className="section-label mb-1 text-white/80">Bắt Đầu Ngay Hôm Nay</p>
+            <h1 className="font-montserrat font-black text-2xl text-white uppercase tracking-wider">Tạo Tài Khoản</h1>
+          </div>
 
         {/* Role Selector */}
-        <div className="grid grid-cols-2 gap-3 mb-8">
+        <div className="grid grid-cols-2 gap-2 mb-6">
           {([
-            { id: 'customer', label: 'Người Tập Luyện', icon: User, desc: 'Tìm HLV & theo dõi tiến trình' },
-            { id: 'pt', label: 'Huấn Luyện Viên', icon: Dumbbell, desc: 'Đăng ký nhận học viên' },
+            { id: 'customer', label: 'Người Tập Luyện', icon: User, desc: 'Tìm HLV & theo dõi' },
+            { id: 'pt', label: 'Huấn Luyện Viên', icon: Dumbbell, desc: 'Nhận học viên' },
           ] as const).map((r) => {
             const Icon = r.icon;
             return (
@@ -91,76 +119,77 @@ const Register: React.FC = () => {
                 key={r.id}
                 type="button"
                 onClick={() => setRole(r.id)}
-                className={`flex flex-col items-start p-5 border-2 cursor-pointer transition-all duration-200 text-left ${
+                className={`flex flex-col items-start p-3 border-2 cursor-pointer transition-all duration-200 text-left ${
                   role === r.id
                     ? 'border-brand-red bg-brand-red/10'
                     : 'border-brand-border hover:border-white/20 bg-brand-surface'
                 }`}
               >
-                <div className={`w-8 h-8 flex items-center justify-center mb-3 ${role === r.id ? 'bg-brand-red' : 'bg-brand-dark'}`}>
-                  <Icon size={16} className="text-white" />
+                <div className={`w-6 h-6 flex items-center justify-center mb-2 ${role === r.id ? 'bg-brand-red' : 'bg-brand-dark'}`}>
+                  <Icon size={14} className="text-white" />
                 </div>
-                <p className={`font-semibold text-sm mb-1 ${role === r.id ? 'text-white' : 'text-white/60'}`}>{r.label}</p>
-                <p className="text-white/30 text-xs">{r.desc}</p>
+                <p className={`font-semibold text-sm mb-0.5 ${role === r.id ? 'text-white' : 'text-white/60'}`}>{r.label}</p>
+                <p className="text-white/30 text-[10px] leading-tight">{r.desc}</p>
               </button>
             );
           })}
         </div>
 
         {error && (
-          <div className="mb-6 border border-brand-red bg-brand-red/10 px-4 py-3 text-brand-red text-sm">
+          <div className="mb-4 border border-brand-red bg-brand-red/10 px-3 py-2 text-brand-red text-sm">
             {error}
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-          <div>
-            <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Họ và Tên</label>
-            <input
-              type="text"
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Nguyễn Văn A"
-              required
-              className="input-dark"
-            />
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-white/70 text-xs uppercase tracking-widest mb-1.5">Họ và Tên</label>
+              <input
+                type="text"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                placeholder="Nguyễn Văn A"
+                required
+                className="input-dark py-2"
+              />
+            </div>
+            <div>
+              <label className="block text-white/70 text-xs uppercase tracking-widest mb-1.5">SĐT</label>
+              <input
+                type="tel"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+                placeholder="0987..."
+                required
+                className="input-dark py-2"
+              />
+            </div>
           </div>
 
           <div>
-            <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Email</label>
+            <label className="block text-white/70 text-xs uppercase tracking-widest mb-1.5">Email</label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="your@email.com"
               required
-              className="input-dark"
+              className="input-dark py-2"
             />
           </div>
 
           <div>
-            <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Số Điện Thoại</label>
-            <input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="Ví dụ: 0987654321"
-              required
-              className="input-dark"
-            />
-          </div>
-
-          <div>
-            <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Mật Khẩu</label>
+            <label className="block text-white/70 text-xs uppercase tracking-widest mb-1.5">Mật Khẩu</label>
             <div className="relative">
               <input
                 type={showPass ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Tối thiểu 8 ký tự (chứa chữ và số)"
+                placeholder="Tối thiểu 8 ký tự"
                 required
                 minLength={8}
-                className="input-dark pr-12"
+                className="input-dark pr-12 py-2"
               />
               <button
                 type="button"
@@ -191,28 +220,67 @@ const Register: React.FC = () => {
             </button>.
           </p>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`btn-primary w-full justify-center py-4 text-sm ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-          >
-            {loading ? (
-              <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-              </svg>
-            ) : (
-              <>Tạo Tài Khoản <ArrowRight size={16} /></>
-            )}
-          </button>
+          <div className="flex flex-col gap-2 pt-1">
+            <button
+              type="submit"
+              disabled={loading}
+              className="btn-primary py-2.5 px-4 text-xs tracking-wider justify-center w-full"
+            >
+              {loading ? (
+                <Loader2 className="animate-spin text-white" size={16} />
+              ) : (
+                'TẠO TÀI KHOẢN'
+              )}
+            </button>
+          </div>
+
+          {role === 'customer' && (
+            <>
+              <div className="relative my-2">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/10"></div>
+                </div>
+                <div className="relative flex justify-center text-[10px]">
+                  <span className="bg-[#0f0f13] px-3 text-white/40 tracking-wider">HOẶC ĐĂNG KÝ BẰNG</span>
+                </div>
+              </div>
+
+              <div className="flex justify-center w-full scale-90 origin-top">
+                <GoogleLogin
+                  onSuccess={async (credentialResponse) => {
+                    if (credentialResponse.credential) {
+                      setLoading(true);
+                      setError('');
+                      const res = await googleLogin(credentialResponse.credential, 'customer');
+                      if (res.success) {
+                        navigate('/customer/dashboard');
+                      } else {
+                        setError(res.message || 'Google registration failed');
+                        setLoading(false);
+                      }
+                    }
+                  }}
+                  onError={() => {
+                    setError('Registration Failed');
+                  }}
+                  theme="filled_black"
+                  shape="rectangular"
+                  text="signup_with"
+                  size="large"
+                  width="300"
+                />
+              </div>
+            </>
+          )}
         </form>
 
-        <p className="text-center text-white/30 text-sm mt-8">
+        <p className="text-center text-white/30 text-xs mt-6">
           Đã có tài khoản?{' '}
           <Link to="/login" className="text-white hover:text-brand-red transition-colors font-semibold">
             Đăng nhập
           </Link>
         </p>
+        </div>
       </div>
 
       {/* Terms of Service Modal */}

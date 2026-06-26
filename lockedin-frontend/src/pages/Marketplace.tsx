@@ -1,6 +1,6 @@
 // src/pages/Marketplace.tsx
 import React, { useState, useMemo, useEffect } from 'react';
-import { Search, SlidersHorizontal, Star, ArrowRight, ChevronDown } from 'lucide-react';
+import { Search, SlidersHorizontal, Star, ArrowRight, ChevronDown, Home, Calendar, MessageSquare, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import Badge from '../components/Badge';
 import api from '../services/api';
@@ -337,7 +337,7 @@ const Marketplace: React.FC = () => {
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-1">
                             <h3 className="font-semibold text-white text-sm truncate">{pt.name}</h3>
-                            {pt.certified && <span className="w-4 h-4 bg-brand-red flex items-center justify-center flex-shrink-0" title="Đã xác minh">✓</span>}
+                            {pt.certified && <span className="w-4 h-4 bg-brand-red flex items-center justify-center flex-shrink-0 rounded-full" title="Đã xác minh">✓</span>}
                           </div>
                           <p className="text-white/40 text-xs mb-2">{pt.experience} năm · {pt.location}</p>
                           <div className="flex items-center gap-2">
@@ -484,15 +484,15 @@ const Marketplace: React.FC = () => {
       {/* Mobile Bottom Nav */}
       <nav className="mobile-bottom-bar">
         {[
-          { label: 'Trang Chủ', icon: '⚡', path: '/' },
-          { label: 'Tìm PT', icon: '🔍', path: '/marketplace' },
-          { label: 'Lịch', icon: '📅', path: '/customer/bookings' },
-          { label: 'Chat', icon: '💬', path: '/customer/workspace' },
-          { label: 'Hồ Sơ', icon: '👤', path: '/customer/profile' },
+          { label: 'Trang Chủ', icon: <Home size={20} />, path: '/' },
+          { label: 'Tìm PT', icon: <Search size={20} />, path: '/marketplace' },
+          { label: 'Lịch', icon: <Calendar size={20} />, path: '/customer/bookings' },
+          { label: 'Chat', icon: <MessageSquare size={20} />, path: '/customer/workspace' },
+          { label: 'Hồ Sơ', icon: <User size={20} />, path: '/customer/profile' },
         ].map((tab, i) => (
-          <Link key={i} to={tab.path} className="flex flex-col items-center gap-1 px-3 py-1">
-            <span className="text-xl">{tab.icon}</span>
-            <span className="text-white/50 text-[10px] uppercase tracking-widest">{tab.label}</span>
+          <Link key={i} to={tab.path} className="flex flex-col items-center gap-1 px-3 py-1 text-white/50 hover:text-brand-red transition-colors">
+            <span className="flex items-center justify-center">{tab.icon}</span>
+            <span className="text-[10px] uppercase tracking-widest mt-1">{tab.label}</span>
           </Link>
         ))}
       </nav>

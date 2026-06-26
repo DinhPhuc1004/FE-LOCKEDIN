@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Zap, ArrowRight, Loader2 } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import { GoogleLogin } from '@react-oauth/google';
 import api from '../../services/api';
 import logoImg from '../../assets/logo.png';
 
@@ -12,7 +13,7 @@ const Login: React.FC = () => {
   const [showPass, setShowPass] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const { login } = useAuth();
+  const { login, googleLogin } = useAuth();
   const navigate = useNavigate();
 
   // Forgot / Reset Password state
@@ -30,9 +31,12 @@ const Login: React.FC = () => {
     setError('');
     setLoading(true);
     try {
-      const success = await login(email, password);
-      if (success) {
-        navigate('/marketplace');
+      const result = await login(email, password);
+      if (result.success) {
+        if (result.role === 'customer') navigate('/');
+        else if (result.role === 'pt') navigate('/pt/bookings');
+        else if (result.role === 'admin') navigate('/admin/dashboard');
+        else navigate('/');
       } else {
         setError('Email hoặc mật khẩu không chính xác');
       }
@@ -102,49 +106,45 @@ const Login: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-brand-black flex">
-      {/* Left: Branding panel */}
-      <div className="hidden lg:flex lg:w-1/2 flex-col justify-between p-16 border-r border-brand-border relative overflow-hidden">
-        {/* Grid BG */}
-        <div className="absolute inset-0 opacity-5" style={{
-          backgroundImage: `linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)`,
-          backgroundSize: '40px 40px',
-        }} />
+    <div 
+      className="min-h-screen flex relative"
+      style={{
+        backgroundImage: 'url("https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?q=80&w=2000&auto=format&fit=crop")',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }}
+    >
+      {/* Global Overlay */}
+      <div className="absolute inset-0 bg-black/40" />
 
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2 relative z-10 hover:opacity-80 transition-opacity">
-          <img src={logoImg} alt="LockedIn Logo" className="h-12 w-auto object-contain" />
-        </Link>
-
-        {/* Main copy */}
-        <div className="relative z-10">
-          <div className="w-12 h-0.5 bg-brand-red mb-6" />
-          <h2 className="font-montserrat font-black text-6xl text-white uppercase leading-none tracking-tight mb-6">
+      {/* Left side text container */}
+      <div className="relative z-10 hidden lg:flex flex-1 flex-col justify-center p-16 xl:p-24">
+        <div>
+          <Link to="/" className="inline-block mb-12 hover:opacity-80 transition-opacity">
+            <img src={logoImg} alt="LockedIn Logo" className="h-12 w-auto object-contain drop-shadow-lg" />
+          </Link>
+          <div className="w-12 h-1 bg-brand-red mb-6 shadow-[0_0_10px_rgba(255,0,0,0.5)]" />
+          <h2 className="font-montserrat font-black text-6xl text-white uppercase leading-none tracking-tight mb-6 drop-shadow-xl">
             CHINH PHỤC<br />
-            <span className="text-brand-red">GIỚI HẠN</span><br />
+            <span className="text-brand-red drop-shadow-[0_0_15px_rgba(255,0,0,0.4)]">GIỚI HẠN</span><br />
             CỦA BẠN
           </h2>
-          <p className="text-white/40 text-base leading-relaxed max-w-sm">
-            Đăng nhập để tiếp tục hành trình chinh phục vóc dáng cùng 
-            các huấn luyện viên hàng đầu Việt Nam.
+          <p className="text-white/90 text-lg leading-relaxed max-w-sm drop-shadow-md">
+            Đăng nhập để tiếp tục hành trình chinh phục vóc dáng cùng các huấn luyện viên hàng đầu Việt Nam.
           </p>
         </div>
-
-        {/* Dummy spacer to keep main copy centered in justify-between flex layout */}
-        <div className="h-16 pointer-events-none select-none relative z-10 opacity-0" />
       </div>
 
-      {/* Right: Login Form */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md">
-          {/* Mobile logo */}
-          <Link to="/" className="flex items-center gap-2 mb-12 lg:hidden hover:opacity-80 transition-opacity">
+      {/* Right side form container */}
+      <div className="relative z-10 w-full lg:w-1/2 flex items-center justify-center p-4 lg:p-12">
+        <div className="w-full max-w-md bg-white/5 backdrop-blur-xl border border-white/20 rounded-3xl p-8 lg:p-10 shadow-2xl">
+          <Link to="/" className="flex justify-center mb-10 lg:hidden hover:opacity-80 transition-opacity">
             <img src={logoImg} alt="LockedIn Logo" className="h-10 w-auto object-contain" />
           </Link>
 
-          <div className="mb-10">
-            <p className="section-label mb-3">Chào Mừng Trở Lại</p>
-            <h1 className="font-montserrat font-black text-4xl text-white uppercase tracking-wider">Đăng Nhập</h1>
+          <div className="mb-10 text-center">
+            <p className="section-label mb-2 text-white/80">Chào Mừng Trở Lại</p>
+            <h1 className="font-montserrat font-black text-3xl text-white uppercase tracking-wider">Đăng Nhập</h1>
           </div>
 
           {error && (
@@ -155,7 +155,7 @@ const Login: React.FC = () => {
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-5">
             <div>
-              <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Email</label>
+              <label className="block text-white/70 text-xs uppercase tracking-widest mb-2">Email</label>
               <input
                 type="email"
                 value={email}
@@ -167,7 +167,7 @@ const Login: React.FC = () => {
             </div>
 
             <div>
-              <label className="block text-white/40 text-xs uppercase tracking-widest mb-2">Mật Khẩu</label>
+              <label className="block text-white/70 text-xs uppercase tracking-widest mb-2">Mật Khẩu</label>
               <div className="relative">
                 <input
                   type={showPass ? 'text' : 'password'}
@@ -219,6 +219,43 @@ const Login: React.FC = () => {
                 <>Đăng Nhập <ArrowRight size={16} /></>
               )}
             </button>
+            
+            <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-white/10"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="bg-[#0f0f13] px-4 text-white/40 tracking-wider">HOẶC ĐĂNG NHẬP BẰNG</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center w-full">
+              <GoogleLogin
+                onSuccess={async (credentialResponse) => {
+                  if (credentialResponse.credential) {
+                    setLoading(true);
+                    setError('');
+                    const res = await googleLogin(credentialResponse.credential);
+                    if (res.success) {
+                      if (res.role === 'pt') navigate('/pt/dashboard');
+                      else if (res.role === 'admin') navigate('/admin/dashboard');
+                      else navigate('/customer/dashboard');
+                    } else {
+                      setError(res.message || 'Google login failed');
+                      setLoading(false);
+                    }
+                  }
+                }}
+                onError={() => {
+                  setError('Login Failed');
+                }}
+                theme="filled_black"
+                shape="rectangular"
+                text="continue_with"
+                size="large"
+                width="300"
+              />
+            </div>
           </form>
 
           <p className="text-center text-white/30 text-sm mt-8">
@@ -280,7 +317,7 @@ const Login: React.FC = () => {
             </div>
 
             {forgotMsg && (
-              <div className="mb-4 border border-white bg-white/5 px-3 py-2 text-white text-xs">
+              <div className="mb-4 border border-white bg-white/5 px-3 py-2 text-white text-xs rounded-xl">
                 {forgotMsg}
               </div>
             )}

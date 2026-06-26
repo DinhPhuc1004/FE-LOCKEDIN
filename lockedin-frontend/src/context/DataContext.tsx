@@ -156,6 +156,7 @@ interface DataContextType {
   
   // Utilities
   markNotificationsAsRead: () => void;
+  markNotificationAsRead: (id: string) => Promise<void>;
   refreshBackendData: () => Promise<void>;
   refreshDisputes: () => Promise<void>;
 }
@@ -1444,13 +1445,20 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const markNotificationsAsRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, read: true })));
     try {
-      const res = await api.patch('/notifications/read-all');
-      if (res.data?.success) {
-        fetchBackendData();
-      }
+      await api.patch('/notifications/read-all');
     } catch (e) {
       console.error('Failed to mark notifications as read:', e);
+    }
+  };
+
+  const markNotificationAsRead = async (id: string) => {
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    try {
+      await api.patch(`/notifications/${id}/read`);
+    } catch (e) {
+      console.error('Failed to mark notification as read:', e);
     }
   };
 
@@ -1490,6 +1498,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
         blockPT,
         releaseSettlement,
         markNotificationsAsRead,
+        markNotificationAsRead,
         refreshDisputes,
         refreshBackendData: fetchBackendData
       }}

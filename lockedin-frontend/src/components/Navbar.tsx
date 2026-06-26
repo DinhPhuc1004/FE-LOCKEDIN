@@ -11,7 +11,7 @@ const Navbar: React.FC = () => {
   const [isVisible, setIsVisible] = useState(true);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { currentUser, currentRole, logout } = useAuth();
-  const { notifications, markNotificationsAsRead } = useData();
+  const { notifications, markNotificationsAsRead, markNotificationAsRead } = useData();
   const [showNotifications, setShowNotifications] = useState(false);
   const unreadCount = notifications ? notifications.filter(n => !n.read).length : 0;
   const location = useLocation();
@@ -36,6 +36,12 @@ const Navbar: React.FC = () => {
   useEffect(() => {
     setMobileOpen(false);
   }, [location.pathname]);
+
+  const handleNotificationClick = (notif: AppNotification) => {
+    if (!notif.read) {
+      markNotificationAsRead(notif.id);
+    }
+  };
 
   const getNavLinks = () => {
     if (!currentUser) {
@@ -84,9 +90,12 @@ const Navbar: React.FC = () => {
       >
         <div className="section-container">
           <div className="flex items-center justify-between h-16">
-            <Link to="/" className="flex items-center group">
-              <img src={logoImg} alt="LockedIn Logo" className="h-12 w-auto object-contain transition-all duration-200 group-hover:scale-105" />
-            </Link>
+            {/* Left: Logo */}
+            <div className="flex-1 flex justify-start">
+              <Link to="/" className="flex items-center group">
+                <img src={logoImg} alt="LockedIn Logo" className="h-12 w-auto object-contain transition-all duration-200 group-hover:scale-105" />
+              </Link>
+            </div>
 
             {/* Desktop Nav Links */}
             <nav className="hidden md:flex items-center gap-8">
@@ -102,7 +111,7 @@ const Navbar: React.FC = () => {
             </nav>
 
             {/* Desktop Right Actions */}
-            <div className="hidden md:flex items-center gap-4">
+            <div className="hidden md:flex flex-1 justify-end items-center gap-4">
               {currentUser ? (
                 <div className="flex items-center gap-4">
                   {/* Notifications Bell */}
@@ -150,7 +159,8 @@ const Navbar: React.FC = () => {
                             notifications.map((notif) => (
                               <div
                                 key={notif.id}
-                                className={`p-4 flex flex-col gap-1 transition-colors ${
+                                onClick={() => handleNotificationClick(notif)}
+                                className={`p-4 flex flex-col gap-1 cursor-pointer transition-colors ${
                                   !notif.read ? 'bg-brand-red/5' : 'hover:bg-white/[0.02]'
                                 }`}
                               >
@@ -202,7 +212,7 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Mobile Actions with Notifications Bell */}
-            <div className="flex md:hidden items-center gap-2">
+            <div className="flex flex-1 justify-end md:hidden items-center gap-2">
               {currentUser && (
                 <div className="relative">
                   <button
@@ -244,7 +254,8 @@ const Navbar: React.FC = () => {
                           notifications.map((notif) => (
                             <div
                               key={notif.id}
-                              className={`p-3 flex flex-col gap-1 transition-colors ${
+                              onClick={() => handleNotificationClick(notif)}
+                              className={`p-3 flex flex-col gap-1 cursor-pointer transition-colors ${
                                 !notif.read ? 'bg-brand-red/5' : 'hover:bg-white/[0.02]'
                               }`}
                             >

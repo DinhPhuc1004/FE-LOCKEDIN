@@ -84,7 +84,7 @@ const CheckoutSim: React.FC = () => {
     return (
       <div className="min-h-screen bg-brand-black flex items-center justify-center p-8">
         <div className="w-full max-w-md text-center animate-fade-up">
-          <div className="w-20 h-20 bg-brand-red flex items-center justify-center mx-auto mb-8">
+          <div className="w-20 h-20 bg-brand-red flex items-center justify-center mx-auto mb-8 rounded-xl">
             <CheckCircle size={40} className="text-white" />
           </div>
           <div className="w-12 h-0.5 bg-brand-red mx-auto mb-6" />

@@ -1,6 +1,6 @@
 // src/pages/WorkspacePage.tsx
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Zap, ChevronRight, Dumbbell, Plus, Loader2, Trash2 } from 'lucide-react';
+import { Send, Zap, Dumbbell, Plus, Loader2, Trash2, Target, MessageSquare, Paperclip, User } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useData } from '../context/DataContext';
 import api from '../services/api';
@@ -53,7 +53,7 @@ const WorkspacePage: React.FC = () => {
   const [useMockChat, setUseMockChat] = useState(false);
   
   const [input, setInput] = useState('');
-  const [showMealPlan, setShowMealPlan] = useState(false);
+  const [activeTab, setActiveTab] = useState<'sessions' | 'chat' | 'mealplan'>('chat');
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   
   // Create Plan Modal state
@@ -602,7 +602,7 @@ const WorkspacePage: React.FC = () => {
           setPreference('');
           setAllergyNote('');
           setShowCreatePlanModal(false);
-          setShowMealPlan(true);
+          setActiveTab('mealplan');
         } else {
           setGenError(createRes.data?.message || 'Không thể lưu thực đơn vào cơ sở dữ liệu.');
         }
@@ -791,24 +791,51 @@ const WorkspacePage: React.FC = () => {
                   Khiếu Nại
                 </button>
               )}
-
-              {/* Meal Plan Toggle */}
-              <button
-                onClick={() => setShowMealPlan(!showMealPlan)}
-                className={`flex items-center gap-2 px-4 py-2 text-xs font-semibold uppercase tracking-widest cursor-pointer transition-all duration-200 ${
-                  showMealPlan ? 'bg-brand-red text-white' : 'border border-brand-border text-white/50 hover:border-brand-red hover:text-white'
-                }`}
-              >
-                <Zap size={12} />
-                Dinh Dưỡng AI ({mealPlansList.length})
-                <ChevronRight size={12} className={`transition-transform duration-200 ${showMealPlan ? 'rotate-180' : ''}`} />
-              </button>
             </div>
           </div>
 
-          <div className="flex-1 flex overflow-hidden">
-            {/* Message Area */}
-            <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4 bg-brand-black">
+          {/* TAB NAVIGATION */}
+          <div className="flex border-b border-brand-border bg-brand-surface/30 px-6">
+            <button
+              onClick={() => setActiveTab('sessions')}
+              className={`px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all duration-200 border-b-2 flex items-center gap-2 ${
+                activeTab === 'sessions'
+                  ? 'border-brand-red text-white bg-white/[0.02]'
+                  : 'border-transparent text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <Target size={14} className={activeTab === 'sessions' ? 'text-brand-red' : 'text-white/40'} />
+              Tiến Độ ({selectedWorkspace.sessionsCompleted}/{selectedWorkspace.sessionsTotal})
+            </button>
+            <button
+              onClick={() => setActiveTab('chat')}
+              className={`px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all duration-200 border-b-2 flex items-center gap-2 ${
+                activeTab === 'chat'
+                  ? 'border-brand-red text-white bg-white/[0.02]'
+                  : 'border-transparent text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <MessageSquare size={14} className={activeTab === 'chat' ? 'text-brand-red' : 'text-white/40'} />
+              Nhắn Tin
+            </button>
+            <button
+              onClick={() => setActiveTab('mealplan')}
+              className={`px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all duration-200 border-b-2 flex items-center gap-2 ${
+                activeTab === 'mealplan'
+                  ? 'border-brand-red text-white bg-white/[0.02]'
+                  : 'border-transparent text-white/40 hover:text-white hover:bg-white/[0.02]'
+              }`}
+            >
+              <Zap size={14} className={activeTab === 'mealplan' ? 'text-brand-red' : 'text-white/40'} />
+              Thực Đơn AI
+            </button>
+          </div>
+
+          <div className="flex-1 flex overflow-hidden relative bg-brand-black">
+            {/* Chat Tab */}
+            {activeTab === 'chat' && (
+              <div className="absolute inset-0 flex flex-col w-full h-full animate-fade-in">
+                <div className="flex-1 overflow-y-auto px-6 py-6 flex flex-col gap-4">
               {loadingMessages ? (
                 <div className="flex-1 flex items-center justify-center flex-col gap-2 text-white/40">
                   <Loader2 className="animate-spin text-brand-red" size={24} />
@@ -905,10 +932,10 @@ const WorkspacePage: React.FC = () => {
                         {!isMe && (
                           <span className="text-white/30 text-[10px] px-1 font-semibold">{msg.senderName}</span>
                         )}
-                        <div className={`px-4 py-3 text-sm leading-relaxed ${
+                        <div className={`px-5 py-3 rounded-[20px] text-sm leading-relaxed shadow-lg ${
                           isMe
-                            ? 'bg-brand-red text-white'
-                            : 'bg-brand-surface border border-brand-border text-white/90'
+                            ? 'bg-brand-red text-white rounded-br-sm'
+                            : 'bg-brand-surface border border-brand-border text-white/90 rounded-bl-sm'
                         }`}>
                           {msg.content}
                         </div>
@@ -923,132 +950,177 @@ const WorkspacePage: React.FC = () => {
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Meal Plan Sidebar */}
-            {showMealPlan && (
-              <aside className="w-80 flex-shrink-0 border-l border-brand-border bg-brand-dark overflow-y-auto flex flex-col">
-                <div className="px-5 py-5 border-b border-brand-border flex items-center justify-between flex-shrink-0">
-                  <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <Zap size={14} className="text-brand-red" />
-                      <p className="section-label">Gemini AI</p>
+            {/* Message Input Bar */}
+            <div className="flex-shrink-0 border-t border-brand-border bg-brand-dark px-6 py-4">
+              <div className="flex items-center gap-3">
+                <div className="flex-1 relative">
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                    placeholder="Nhập tin nhắn để thảo luận với HLV/Học viên..."
+                    className="input-dark pr-4"
+                    disabled={sendingMessage}
+                  />
+                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || sendingMessage}
+                  className={`w-12 h-12 flex items-center justify-center transition-all duration-200 ${
+                    input.trim() && !sendingMessage
+                      ? 'bg-brand-red hover:bg-brand-red-dark cursor-pointer'
+                      : 'bg-brand-border cursor-not-allowed'
+                  }`}
+                >
+                  {sendingMessage ? (
+                    <Loader2 className="animate-spin text-white" size={16} />
+                  ) : (
+                    <Send size={16} className="text-white" />
+                  )}
+                </button>
+              </div>
+              <p className="text-white/20 text-[10px] mt-2 uppercase tracking-widest">Nhấn Enter để gửi tin nhắn</p>
+            </div>
+            </div>
+            )}
+
+            {/* Meal Plan Tab */}
+            {activeTab === 'mealplan' && (
+              <div className="absolute inset-0 w-full h-full overflow-y-auto bg-brand-black animate-fade-in flex flex-col lg:flex-row">
+                <div className="flex-1 max-w-4xl mx-auto w-full p-6">
+                  <div className="flex items-center justify-between mb-8">
+                    <div>
+                      <div className="flex items-center gap-2 mb-2">
+                        <Zap size={20} className="text-brand-red" />
+                        <h2 className="font-montserrat font-bold text-2xl text-white uppercase tracking-wider">Hệ Thống Dinh Dưỡng AI</h2>
+                      </div>
+                      <p className="text-white/40 text-sm">Thiết kế thực đơn cá nhân hóa dựa trên mục tiêu và thể trạng.</p>
                     </div>
-                    <h3 className="font-montserrat font-bold text-lg text-white uppercase tracking-wider">Thực Đơn</h3>
+
+                    {currentUser?.role === 'pt' && (
+                      <button
+                        onClick={() => setShowCreatePlanModal(true)}
+                        className="btn-primary flex items-center gap-2 py-3 px-6"
+                      >
+                        <Plus size={18} />
+                        TẠO THỰC ĐƠN MỚI
+                      </button>
+                    )}
                   </div>
 
-                  {currentUser?.role === 'pt' && (
-                    <button
-                      onClick={() => setShowCreatePlanModal(true)}
-                      className="w-8 h-8 bg-brand-red hover:bg-brand-red-dark text-white flex items-center justify-center rounded cursor-pointer transition-colors"
-                      title="Tạo thực đơn AI mới"
-                    >
-                      <Plus size={16} />
-                    </button>
-                  )}
-                </div>
-
-                <div className="flex-1 overflow-y-auto">
                   {loadingMealPlan ? (
-                    <div className="p-8 text-center text-white/40 flex flex-col items-center gap-2">
-                      <Loader2 className="animate-spin text-brand-red" size={20} />
-                      <span className="text-xs">Đang tải dữ liệu dinh dưỡng...</span>
+                    <div className="p-12 text-center text-white/40 flex flex-col items-center gap-4">
+                      <Loader2 className="animate-spin text-brand-red" size={32} />
+                      <span>Đang phân tích dữ liệu dinh dưỡng...</span>
                     </div>
                   ) : mealPlansList.length === 0 ? (
-                    <div className="p-8 text-center text-white/30 text-xs">
+                    <div className="border border-brand-border bg-brand-surface/30 p-12 text-center rounded-xl backdrop-blur-md">
+                      <Zap size={48} className="text-white/10 mx-auto mb-4" />
                       {currentUser?.role === 'pt' ? (
                         <div className="flex flex-col gap-4 items-center">
-                          <p>Chưa có thực đơn nào được tạo cho học viên.</p>
-                          <button
-                            onClick={() => setShowCreatePlanModal(true)}
-                            className="btn-primary py-2 px-4 text-xs tracking-wider justify-center"
-                          >
-                            TẠO NGAY VỚI AI
-                          </button>
+                          <p className="text-white/60">Học viên này chưa có thực đơn nào. Hãy sử dụng Gemini AI để thiết kế ngay!</p>
                         </div>
                       ) : (
-                        'Huấn luyện viên chưa thiết lập thực đơn dinh dưỡng cho bạn.'
+                        <p className="text-white/60">Huấn luyện viên chưa thiết lập thực đơn dinh dưỡng cho bạn.</p>
                       )}
                     </div>
                   ) : (
-                    <>
-                      {/* Active & Switcher Menu */}
-                      <div className="p-4 border-b border-brand-border bg-brand-surface/40">
-                        <label className="block text-[10px] text-white/40 uppercase tracking-widest mb-1.5 font-bold">Danh Sách Thực Đơn</label>
-                        <div className="flex flex-col gap-2">
-                          {mealPlansList.map((plan) => (
-                            <div key={plan.id} className="flex items-center justify-between bg-brand-surface p-2 border border-brand-border">
-                              <span className="text-xs text-white truncate max-w-[140px] font-medium">{plan.title}</span>
-                              <div className="flex items-center gap-1">
-                                {plan.isActive ? (
-                                  <span className="text-[10px] bg-brand-red/10 border border-brand-red px-1.5 py-0.5 text-brand-red font-semibold">ĐANG DÙNG</span>
-                                ) : (
-                                  <button
-                                    onClick={() => handleActivatePlan(plan.id)}
-                                    className="text-[10px] bg-brand-border hover:bg-white/10 px-1.5 py-0.5 text-white/60 hover:text-white cursor-pointer transition-colors"
-                                  >
-                                    BẬT
-                                  </button>
-                                )}
-                                {currentUser?.role === 'pt' && (
-                                  <button
-                                    onClick={() => handleDeletePlan(plan.id)}
-                                    className="text-white/30 hover:text-brand-red p-1 cursor-pointer transition-colors"
-                                  >
-                                    <Trash2 size={12} />
-                                  </button>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Macronutrients Analysis */}
-                      {parsedPlan ? (
-                        <>
-                          <div className="p-5 border-b border-brand-border">
-                            <div className="grid grid-cols-4 gap-1.5 mb-4">
-                              {[
-                                { label: 'Calo', value: calories, unit: 'kcal' },
-                                { label: 'Đạm', value: protein, unit: 'g' },
-                                { label: 'Carb', value: carbs, unit: 'g' },
-                                { label: 'Béo', value: fat, unit: 'g' },
-                              ].map((m, i) => (
-                                <div key={i} className="bg-brand-surface border border-brand-border p-2.5 text-center">
-                                  <p className="text-white font-bold text-base leading-none">{m.value}</p>
-                                  <p className="text-white/30 text-[9px] uppercase tracking-wider mt-1">{m.unit}</p>
+                    <div className="flex flex-col lg:flex-row gap-8">
+                      {/* Left Column: Menu Switcher */}
+                      <div className="w-full lg:w-72 flex-shrink-0 space-y-4">
+                        <div className="glass-panel p-4">
+                          <label className="block text-xs text-brand-red uppercase tracking-widest mb-3 font-bold border-b border-brand-red/20 pb-2">Các Bản Thực Đơn</label>
+                          <div className="flex flex-col gap-2">
+                            {mealPlansList.map((plan) => (
+                              <div key={plan.id} className={`flex flex-col p-3 border transition-all ${plan.isActive ? 'bg-brand-red/10 border-brand-red shadow-[0_0_15px_rgba(255,51,51,0.1)]' : 'bg-brand-surface border-brand-border hover:border-white/20'}`}>
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                  <span className={`text-sm font-semibold leading-tight ${plan.isActive ? 'text-white' : 'text-white/60'}`}>{plan.title}</span>
+                                  {plan.isActive && (
+                                    <span className="text-[9px] bg-brand-red text-white px-1.5 py-0.5 rounded-md font-bold tracking-wider flex-shrink-0">ACTIVE</span>
+                                  )}
                                 </div>
-                              ))}
-                            </div>
-
-                            {/* Nutrition fill bars */}
-                            {[
-                              { label: 'Chất Đạm', val: macroPercent(protein * 4, calories) },
-                              { label: 'Tinh Bột', val: macroPercent(carbs * 4, calories) },
-                              { label: 'Chất Béo', val: macroPercent(fat * 9, calories) },
-                            ].map((m, i) => (
-                              <div key={i} className="mb-3 last:mb-0">
-                                <div className="flex justify-between mb-1">
-                                  <span className="text-white/40 text-[10px] uppercase tracking-wider">{m.label}</span>
-                                  <span className="text-white text-[10px] font-semibold">{m.val}%</span>
-                                </div>
-                                <div className="progress-track h-1.5">
-                                  <div className="progress-fill" style={{ width: `${m.val}%` }} />
+                                
+                                <div className="flex items-center justify-between mt-1">
+                                  <span className="text-[10px] text-white/30 font-mono">
+                                    {new Date(plan.createdAt).toLocaleDateString('vi-VN')}
+                                  </span>
+                                  <div className="flex items-center gap-2">
+                                    {!plan.isActive && (
+                                      <button
+                                        onClick={() => handleActivatePlan(plan.id)}
+                                        className="text-[10px] uppercase font-bold text-white/40 hover:text-white transition-colors"
+                                      >
+                                        Áp Dụng
+                                      </button>
+                                    )}
+                                    {currentUser?.role === 'pt' && (
+                                      <button
+                                        onClick={() => handleDeletePlan(plan.id)}
+                                        className="text-white/20 hover:text-brand-red transition-colors"
+                                      >
+                                        <Trash2 size={14} />
+                                      </button>
+                                    )}
+                                  </div>
                                 </div>
                               </div>
                             ))}
                           </div>
+                        </div>
 
-                          {/* Days tab selection if multiple days exist */}
+                        {/* Macros Summary */}
+                        {parsedPlan && (
+                          <div className="glass-panel p-5">
+                            <h4 className="text-xs text-white/50 uppercase tracking-widest font-bold mb-4">Tổng Quan Dinh Dưỡng</h4>
+                            <div className="grid grid-cols-2 gap-3 mb-5">
+                              {[
+                                { label: 'Calo Mục Tiêu', value: calories, unit: 'kcal', color: 'text-white' },
+                                { label: 'Protein', value: protein, unit: 'g', color: 'text-blue-400' },
+                                { label: 'Carbs', value: carbs, unit: 'g', color: 'text-yellow-400' },
+                                { label: 'Fat', value: fat, unit: 'g', color: 'text-brand-red' },
+                              ].map((m, i) => (
+                                <div key={i} className="bg-brand-black/50 border border-brand-border/50 p-3 rounded-lg text-center">
+                                  <p className={`font-bold text-xl font-mono ${m.color}`}>{m.value}</p>
+                                  <p className="text-white/40 text-[9px] uppercase tracking-wider mt-1">{m.label}</p>
+                                </div>
+                              ))}
+                            </div>
+
+                            <div className="space-y-3">
+                              {[
+                                { label: 'Chất Đạm (Protein)', val: macroPercent(protein * 4, calories), color: 'bg-blue-400' },
+                                { label: 'Tinh Bột (Carbs)', val: macroPercent(carbs * 4, calories), color: 'bg-yellow-400' },
+                                { label: 'Chất Béo (Fat)', val: macroPercent(fat * 9, calories), color: 'bg-brand-red' },
+                              ].map((m, i) => (
+                                <div key={i}>
+                                  <div className="flex justify-between mb-1">
+                                    <span className="text-white/50 text-[10px] uppercase tracking-wider">{m.label}</span>
+                                    <span className="text-white/80 text-[10px] font-mono">{m.val}%</span>
+                                  </div>
+                                  <div className="h-1.5 bg-brand-black rounded-full overflow-hidden">
+                                    <div className={`h-full ${m.color}`} style={{ width: `${m.val}%` }} />
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Right Column: Meal Details */}
+                      {parsedPlan && (
+                        <div className="flex-1 glass-panel p-6">
                           {daysList.length > 1 && (
-                            <div className="px-4 py-2 border-b border-brand-border flex gap-1.5 overflow-x-auto bg-brand-surface/20">
+                            <div className="flex gap-2 overflow-x-auto pb-4 mb-4 border-b border-white/5 scrollbar-thin">
                               {daysList.map((dayObj: any, index: number) => (
                                 <button
                                   key={index}
                                   onClick={() => setSelectedDayIndex(index)}
-                                  className={`px-3 py-1 text-xs font-bold uppercase transition-colors cursor-pointer flex-shrink-0 ${
+                                  className={`px-4 py-2 text-sm font-bold transition-all rounded-md flex-shrink-0 ${
                                     selectedDayIndex === index
-                                      ? 'bg-brand-red text-white'
-                                      : 'border border-brand-border text-white/40 hover:text-white'
+                                      ? 'bg-brand-red text-white shadow-lg shadow-brand-red/20'
+                                      : 'bg-brand-surface text-white/40 hover:text-white hover:bg-white/5'
                                   }`}
                                 >
                                   Ngày {dayObj.day || index + 1}
@@ -1057,90 +1129,113 @@ const WorkspacePage: React.FC = () => {
                             </div>
                           )}
 
-                          {/* Meal Breakdown List */}
-                          <div className="p-5">
-                            <div className="flex items-center gap-2 mb-4">
-                              <Dumbbell size={12} className="text-white/30" />
-                              <p className="text-white/40 text-[10px] uppercase tracking-widest font-bold">Thực Đơn Chi Tiết</p>
-                            </div>
-
+                          <div className="space-y-6">
                             {mealsList.length === 0 ? (
-                              <div className="text-center text-white/30 text-xs py-4">
-                                Không có chi tiết món ăn.
-                              </div>
+                              <p className="text-center text-white/30 text-sm py-10">Không có dữ liệu bữa ăn cho ngày này.</p>
                             ) : (
                               mealsList.map((meal: any, i: number) => (
-                                <div key={i} className="mb-5 last:mb-0">
-                                  <div className="flex items-center justify-between mb-2">
-                                    <p className="text-white text-sm font-semibold">{meal.mealType || `Bữa Ăn ${i + 1}`}</p>
-                                  </div>
-                                  <ul className="flex flex-col gap-2">
+                                <div key={i} className="group">
+                                  <h4 className="text-brand-red font-montserrat font-bold text-sm uppercase tracking-wider mb-3 flex items-center gap-2">
+                                    <span className="w-1.5 h-1.5 bg-brand-red rounded-full"></span>
+                                    {meal.mealType || `Bữa ${i + 1}`}
+                                  </h4>
+                                  <div className="grid gap-3">
                                     {meal.foods?.map((food: any, j: number) => (
-                                      <li key={j} className="flex flex-col bg-brand-surface/50 border border-brand-border/40 p-2 text-xs">
-                                        <div className="flex justify-between text-white/80 font-medium">
-                                          <span>{food.name}</span>
-                                          <span className="text-brand-red font-mono font-semibold">{food.quantity}</span>
+                                      <div key={j} className="bg-brand-surface/40 hover:bg-brand-surface border border-brand-border/40 hover:border-brand-border p-4 transition-colors rounded-lg flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                                        <div>
+                                          <p className="text-white font-semibold text-base">{food.name}</p>
+                                          <p className="text-brand-red/80 font-mono text-sm mt-0.5">{food.quantity}</p>
                                         </div>
-                                        <div className="flex gap-2 text-[9px] text-white/30 mt-1 font-mono">
-                                          <span>Calo: {food.calories}</span>
-                                          <span>P: {food.protein}g</span>
-                                          <span>C: {food.carbs}g</span>
-                                          <span>F: {food.fat}g</span>
+                                        <div className="flex gap-4 text-[11px] font-mono bg-brand-black/50 px-3 py-2 rounded-md border border-white/5">
+                                          <div className="flex flex-col items-center">
+                                            <span className="text-white/30 uppercase text-[9px] mb-0.5">Calo</span>
+                                            <span className="text-white">{food.calories}</span>
+                                          </div>
+                                          <div className="w-px bg-white/10"></div>
+                                          <div className="flex flex-col items-center">
+                                            <span className="text-white/30 uppercase text-[9px] mb-0.5">Pro</span>
+                                            <span className="text-blue-400">{food.protein}g</span>
+                                          </div>
+                                          <div className="w-px bg-white/10"></div>
+                                          <div className="flex flex-col items-center">
+                                            <span className="text-white/30 uppercase text-[9px] mb-0.5">Carb</span>
+                                            <span className="text-yellow-400">{food.carbs}g</span>
+                                          </div>
+                                          <div className="w-px bg-white/10"></div>
+                                          <div className="flex flex-col items-center">
+                                            <span className="text-white/30 uppercase text-[9px] mb-0.5">Fat</span>
+                                            <span className="text-brand-red">{food.fat}g</span>
+                                          </div>
                                         </div>
-                                      </li>
+                                      </div>
                                     ))}
-                                  </ul>
-                                  {i < mealsList.length - 1 && (
-                                    <div className="border-b border-brand-border/40 mt-4" />
-                                  )}
+                                  </div>
                                 </div>
                               ))
                             )}
                           </div>
-                        </>
-                      ) : (
-                        <div className="p-5 text-center text-white/30 text-xs">
-                          Thực đơn không đúng định dạng JSON.
                         </div>
                       )}
-                    </>
+                    </div>
                   )}
                 </div>
-              </aside>
-            )}
-          </div>
-
-          {/* Message Input Bar */}
-          <div className="flex-shrink-0 border-t border-brand-border bg-brand-dark px-6 py-4">
-            <div className="flex items-center gap-3">
-              <div className="flex-1 relative">
-                <input
-                  type="text"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder="Nhập tin nhắn để thảo luận với HLV/Học viên..."
-                  className="input-dark pr-4"
-                  disabled={sendingMessage}
-                />
               </div>
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim() || sendingMessage}
-                className={`w-12 h-12 flex items-center justify-center transition-all duration-200 ${
-                  input.trim() && !sendingMessage
-                    ? 'bg-brand-red hover:bg-brand-red-dark cursor-pointer'
-                    : 'bg-brand-border cursor-not-allowed'
-                }`}
-              >
-                {sendingMessage ? (
-                  <Loader2 className="animate-spin text-white" size={16} />
-                ) : (
-                  <Send size={16} className="text-white" />
-                )}
-              </button>
-            </div>
-            <p className="text-white/20 text-[10px] mt-2 uppercase tracking-widest">Nhấn Enter để gửi tin nhắn</p>
+            )}
+
+            {/* Sessions Tab */}
+            {activeTab === 'sessions' && (
+              <div className="absolute inset-0 w-full h-full overflow-y-auto bg-brand-black animate-fade-in p-6">
+                <div className="max-w-3xl mx-auto w-full">
+                  <div className="mb-8">
+                    <h2 className="font-montserrat font-bold text-2xl text-white uppercase tracking-wider mb-2">Tiến Độ Khóa Học</h2>
+                    <p className="text-white/40 text-sm">Quản lý và theo dõi các buổi tập đã hoàn thành trong khóa {selectedWorkspace.packageName}.</p>
+                  </div>
+
+                  <div className="glass-panel p-8">
+                    <div className="flex items-center justify-between mb-6">
+                      <div>
+                        <p className="text-4xl font-montserrat font-bold text-white">
+                          {selectedWorkspace.sessionsCompleted} <span className="text-xl text-white/30">/ {selectedWorkspace.sessionsTotal}</span>
+                        </p>
+                        <p className="text-brand-red text-xs uppercase tracking-widest font-bold mt-1">Buổi Đã Tập</p>
+                      </div>
+                      <div className="w-24 h-24 rounded-full border-4 border-brand-surface flex items-center justify-center relative">
+                        <svg className="absolute inset-0 w-full h-full -rotate-90">
+                          <circle cx="44" cy="44" r="42" fill="none" stroke="currentColor" strokeWidth="4" className="text-brand-surface" />
+                          <circle cx="44" cy="44" r="42" fill="none" stroke="currentColor" strokeWidth="4" className="text-brand-red" strokeDasharray="264" strokeDashoffset={264 - (264 * selectedWorkspace.sessionsCompleted / selectedWorkspace.sessionsTotal)} strokeLinecap="round" />
+                        </svg>
+                        <span className="font-bold text-xl">{Math.round((selectedWorkspace.sessionsCompleted / selectedWorkspace.sessionsTotal) * 100)}%</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 gap-3 mt-8">
+                      {Array.from({ length: selectedWorkspace.sessionsTotal }).map((_, i) => {
+                        const sessionNum = i + 1;
+                        const isCompleted = sessionNum <= selectedWorkspace.sessionsCompleted;
+                        const isNext = sessionNum === selectedWorkspace.sessionsCompleted + 1;
+                        
+                        return (
+                          <div
+                            key={i}
+                            className={`aspect-square flex flex-col items-center justify-center rounded-lg border-2 transition-all duration-300 ${
+                              isCompleted
+                                ? 'bg-brand-red/20 border-brand-red text-white shadow-[0_0_15px_rgba(255,51,51,0.2)]'
+                                : isNext
+                                ? 'bg-brand-surface border-white/20 text-white animate-pulse'
+                                : 'bg-brand-black border-brand-border text-white/20'
+                            }`}
+                          >
+                            <span className="font-mono text-lg font-bold">{sessionNum}</span>
+                            {isCompleted && <span className="text-[8px] uppercase tracking-wider text-brand-red font-bold mt-1">Xong</span>}
+                            {isNext && <span className="text-[8px] uppercase tracking-wider text-white/50 mt-1">Tiếp Theo</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </main>
       ) : (

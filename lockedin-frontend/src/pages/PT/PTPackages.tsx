@@ -126,7 +126,7 @@ const PTPackages: React.FC = () => {
                     { label: 'Giá / Gói', value: `${(pkg.price / 1000000).toFixed(1)}M` },
                     { label: 'Đánh Giá', value: '5.0 ⭐' },
                   ].map((s, i) => (
-                    <div key={i} className="bg-brand-dark p-3">
+                    <div key={i} className="bg-brand-dark p-3 rounded-2xl">
                       <p className="text-white/30 text-[10px] uppercase tracking-wider mb-1">{s.label}</p>
                       <p className="text-white font-semibold text-sm">{s.value}</p>
                     </div>

@@ -167,7 +167,7 @@ const AdminDashboard: React.FC = () => {
       <div className="border-b border-brand-border bg-brand-dark">
         <div className="section-container py-10">
           <div className="flex items-center gap-3 mb-2">
-            <div className="w-8 h-8 bg-brand-red flex items-center justify-center">
+            <div className="w-8 h-8 bg-brand-red flex items-center justify-center rounded-xl">
               <Shield size={16} className="text-white" />
             </div>
             <p className="section-label">Cổng Quản Trị</p>
@@ -260,7 +260,7 @@ const AdminDashboard: React.FC = () => {
                 {/* Legend */}
                 <div className="flex items-center gap-6 mt-6 pt-6 border-t border-brand-border">
                   <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 bg-brand-red" />
+                    <div className="w-3 h-3 bg-brand-red rounded-full" />
                     <span className="text-white/40 text-xs">Tháng Hiện Tại</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -464,7 +464,7 @@ const AdminDashboard: React.FC = () => {
                         <div className="flex items-center gap-2 flex-shrink-0 w-full lg:w-auto">
                           <button
                             onClick={() => approvePTVerification(pt.id)}
-                            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-red text-white hover:bg-brand-red-dark text-xs uppercase tracking-widest transition-all duration-200 cursor-pointer"
+                            className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-5 py-2.5 bg-brand-red text-white hover:bg-brand-red-dark text-xs uppercase tracking-widest transition-all duration-200 cursor-pointer rounded-xl"
                           >
                             <CheckCircle size={12} />
                             Duyệt
@@ -535,7 +535,7 @@ const AdminDashboard: React.FC = () => {
                             </button>
                             <button
                               onClick={() => resolveDisputeAction(d.id, 'refund')}
-                              className="px-4 py-2 bg-brand-red text-white text-xs uppercase tracking-widest cursor-pointer hover:bg-brand-red-dark transition-colors duration-200"
+                              className="px-4 py-2 bg-brand-red text-white text-xs uppercase tracking-widest cursor-pointer hover:bg-brand-red-dark transition-colors duration-200 rounded-xl"
                             >
                               Hoàn Tiền
                             </button>

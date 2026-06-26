@@ -110,4 +110,19 @@ api.interceptors.response.use(
   }
 );
 
+// MealPlans API
+export const mealPlans = {
+  getPlans: () => api.get('/meal-plans'),
+  getPlan: (id: string) => api.get(`/meal-plans/${id}`),
+  createPlan: (data: any) => api.post('/meal-plans', data),
+};
+
+// Conversations API
+export const conversations = {
+  getConversations: () => api.get('/conversations'),
+  getConversation: (id: string) => api.get(`/conversations/${id}`),
+  sendMessage: (id: string, message: string) => api.post(`/conversations/${id}/messages`, { message }),
+};
+
+// We export the raw axios instance as default so components can use api.get() directly
 export default api;

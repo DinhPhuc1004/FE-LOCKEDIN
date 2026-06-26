@@ -5,11 +5,11 @@ import { Link } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import Badge from '../../components/Badge';
 
-const STATUS_MAP: Record<string, { label: string; variant: 'red' | 'white' | 'gray' | 'outline' }> = {
+const STATUS_MAP: Record<string, { label: string; variant: 'red' | 'white' | 'gray' | 'outline' | 'yellow' | 'green' }> = {
   Unpaid: { label: 'Chờ Học Viên Trả Tiền', variant: 'outline' },
   PaidPendingAcceptance: { label: 'Chờ Duyệt Giao Dịch', variant: 'outline' },
-  Active: { label: 'Đang Hoạt Động', variant: 'red' },
-  Completed: { label: 'Hoàn Thành', variant: 'white' },
+  Active: { label: 'Đang Hoạt Động', variant: 'yellow' },
+  Completed: { label: 'Hoàn Thành', variant: 'green' },
   Cancelled: { label: 'Đã Hủy / Từ Chối', variant: 'gray' },
 };
 
@@ -195,102 +195,112 @@ const PTBookings: React.FC = () => {
               return (
                 <div
                   key={b.id}
-                  className={`bg-brand-surface border transition-all duration-300 ${b.status === 'Active' ? 'border-brand-red' : 'border-brand-border hover:border-brand-red/50'}`}
+                  className="bg-brand-surface border border-brand-border hover:border-white/20 transition-all duration-300 group"
                 >
-                  {b.status === 'Active' && <div className="h-0.5 w-full bg-brand-red" />}
                   <div className="p-6">
-                    <div className="flex flex-col lg:flex-row lg:items-start justify-between gap-4">
-                      {/* Left Block: Clickable Customer Information */}
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                      
+                      {/* 1. Customer Info (Left) */}
                       <div 
-                        className="flex items-start gap-4 cursor-pointer group"
+                        className="flex items-center gap-5 cursor-pointer flex-1"
                         onClick={() => setSelectedDetailBooking(b)}
                         title="Xem chi tiết lịch đặt"
                       >
-                        <div className="w-12 h-12 bg-brand-dark border border-brand-border flex items-center justify-center flex-shrink-0 group-hover:border-brand-red transition-colors duration-200">
-                          <span className="font-montserrat font-extrabold text-base text-white font-bold group-hover:text-brand-red transition-colors duration-200">{initials}</span>
+                        <div className="w-14 h-14 rounded-full bg-brand-dark border border-brand-border flex items-center justify-center flex-shrink-0 group-hover:border-white/40 transition-colors duration-300 shadow-inner">
+                          <span className="font-display text-lg text-white font-bold">{initials}</span>
                         </div>
                         <div>
-                          <div className="flex items-center gap-3 mb-1 flex-wrap">
-                            <h3 className="font-semibold text-white group-hover:text-brand-red transition-colors duration-200">{b.customerName || 'Học Viên'}</h3>
-                            <span className="text-white/30 text-xs font-mono">{b.id.substring(0, 8)}...</span>
-                            <Badge variant={stat.variant}>{stat.label}</Badge>
+                          <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                            <h3 className="font-bold text-white text-lg group-hover:text-brand-red transition-colors duration-200">{b.customerName || 'Học Viên'}</h3>
+                            <span className="text-white/30 text-xs font-mono bg-brand-dark px-2 py-0.5 rounded-md">#{b.id.substring(0, 6)}</span>
                           </div>
-                          <p className="text-white/40 text-sm mb-3">{b.packageName || 'Gói Tập Luyện'}</p>
-                          <div className="flex flex-wrap gap-4 text-xs text-white/30">
-                            <span className="flex items-center gap-1"><Calendar size={11} />{new Date(b.createdAt).toLocaleDateString('vi-VN')}</span>
-                            <span className="flex items-center gap-1"><Clock size={11} />{new Date(b.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
-                            <span className="text-white font-semibold font-mono">{b.price.toLocaleString('vi-VN')}đ</span>
+                          <p className="text-white/50 text-sm mb-2.5 font-medium">{b.packageName || 'Gói Tập Luyện'}</p>
+                          <div className="flex flex-wrap gap-4 text-[11px] text-white/40 uppercase tracking-widest">
+                            <span className="flex items-center gap-1.5"><Calendar size={13} className="text-brand-red/70" /> {new Date(b.createdAt).toLocaleDateString('vi-VN')}</span>
+                            <span className="flex items-center gap-1.5"><Clock size={13} className="text-brand-red/70" /> {new Date(b.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
+                            <span className="text-white/80 font-bold font-mono text-xs">{b.price.toLocaleString('vi-VN')}đ</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Actions for PT */}
-                      <div className="flex items-center gap-2 flex-wrap">
+                      {/* 2. Status & Progress (Middle) */}
+                      <div className="flex-1 lg:max-w-[280px] xl:max-w-[320px] w-full">
+                        <div className="flex justify-between items-center mb-3">
+                           <Badge variant={stat.variant}>{stat.label}</Badge>
+                           {(b.status === 'Active' || b.status === 'Completed') && (
+                             <span className="text-white text-xs font-bold font-mono">{progress}%</span>
+                           )}
+                        </div>
+                        {(b.status === 'Active' || b.status === 'Completed') && (
+                          <>
+                            <div className="w-full h-1.5 bg-brand-dark border border-brand-border/50 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full rounded-full transition-all duration-1000 ease-out ${b.status === 'Active' ? 'bg-yellow-500' : 'bg-green-500 shadow-[0_0_8px_#22c55e]'}`}
+                                style={{ width: `${progress}%` }} 
+                              />
+                            </div>
+                            <p className="text-[10px] text-white/40 uppercase tracking-widest mt-2 text-right font-medium">
+                              {completedSessions} / {b.sessionsCount} Buổi Tập
+                            </p>
+                          </>
+                        )}
+                        {b.status === 'Unpaid' && (
+                          <div className="flex items-center gap-1.5 text-[10px] text-white/40 uppercase tracking-widest mt-2">
+                            <AlertCircle size={12} className="text-yellow-500" /> Chờ thanh toán điện tử
+                          </div>
+                        )}
+                      </div>
+
+                      {/* 3. Actions (Right) */}
+                      <div className="flex items-center gap-3 flex-shrink-0 lg:justify-end w-full lg:w-auto mt-2 lg:mt-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-brand-border/40">
                         <button
                           onClick={() => setSelectedDetailBooking(b)}
-                          className="flex items-center gap-1.5 px-4 py-2 border border-brand-border text-white hover:border-brand-red hover:text-brand-red text-xs uppercase tracking-widest cursor-pointer transition-all"
+                          className="hidden md:flex w-10 h-10 items-center justify-center rounded-full bg-brand-dark border border-brand-border text-white/60 hover:bg-white hover:text-black transition-all duration-300"
+                          title="Xem Chi Tiết"
                         >
-                          Xem Chi Tiết
+                          <ExternalLink size={16} />
                         </button>
                         
                         {(b.status === 'Active' || b.status === 'Completed') && (
-                          <>
-                            <Link 
-                              to={`/pt/workspace?bookingId=${b.id}`} 
-                              className="flex items-center gap-1.5 px-4 py-2 bg-brand-red hover:bg-brand-red-dark text-white text-xs uppercase tracking-widest cursor-pointer transition-colors"
-                            >
-                              <MessageSquare size={12} />
-                              Hội Thoại
-                            </Link>
-                            {b.status === 'Active' && (
-                              <button
-                                onClick={() => handleComplete(b.id)}
-                                className="flex items-center gap-1.5 px-4 py-2 border border-brand-border text-white/60 hover:border-white hover:text-white text-xs uppercase tracking-widest cursor-pointer transition-all"
-                              >
-                                <CheckCircle size={12} />
-                                Đánh Dấu Hoàn Thành
-                              </button>
-                            )}
-                          </>
+                          <Link 
+                            to={`/pt/workspace?bookingId=${b.id}`} 
+                            className="btn-primary text-xs py-2.5 px-5"
+                          >
+                            <MessageSquare size={14} />
+                            Hội Thoại
+                          </Link>
                         )}
+                        {b.status === 'Active' && (
+                          <button
+                            onClick={() => handleComplete(b.id)}
+                            className="btn-secondary text-xs py-2.5 px-5 border-brand-border text-white/60 hover:border-white hover:text-black hover:bg-white"
+                          >
+                            <CheckCircle size={14} />
+                            Hoàn Thành
+                          </button>
+                        )}
+                        
                         {b.status === 'PaidPendingAcceptance' && (
                           <>
                             <button
                               onClick={() => handleAccept(b.id)}
-                              className="flex items-center gap-1.5 px-4 py-2 bg-brand-red hover:bg-brand-red-dark text-white text-xs uppercase tracking-widest cursor-pointer transition-colors"
+                              className="btn-primary text-xs py-2.5 px-5"
                             >
-                              <CheckCircle size={12} />
+                              <CheckCircle size={14} />
                               Chấp Nhận
                             </button>
                             <button
                               onClick={() => handleReject(b.id)}
-                              className="flex items-center gap-1.5 px-4 py-2 border border-brand-border text-white/40 hover:text-white text-xs uppercase tracking-widest cursor-pointer transition-colors"
+                              className="btn-secondary text-xs py-2.5 px-5 border-brand-border text-white/60 hover:border-white hover:text-black hover:bg-white"
                             >
-                              <XCircle size={12} />
+                              <XCircle size={14} />
                               Từ Chối
                             </button>
                           </>
                         )}
-                        {b.status === 'Unpaid' && (
-                          <div className="flex items-center gap-1 text-[10px] text-white/30 uppercase tracking-widest">
-                            <AlertCircle size={12} /> Chờ thanh toán điện tử
-                          </div>
-                        )}
                       </div>
-                    </div>
 
-                    {/* Progress tracking */}
-                    {(b.status === 'Active' || b.status === 'Completed') && (
-                      <div className="mt-4">
-                        <div className="flex justify-between mb-2">
-                          <span className="text-white/30 text-xs">{completedSessions}/{b.sessionsCount} buổi đã tập xong</span>
-                          <span className="text-white text-xs font-semibold">{progress}%</span>
-                        </div>
-                        <div className="progress-track">
-                          <div className="progress-fill" style={{ width: `${progress}%` }} />
-                        </div>
-                      </div>
-                    )}
+                    </div>
                   </div>
                 </div>
               );
@@ -374,7 +384,7 @@ const PTBookings: React.FC = () => {
                       <span className="text-white/60">{completedSessions}/{b.sessionsCount} buổi hoàn thành</span>
                       <span className="text-white font-bold font-mono">{progress}%</span>
                     </div>
-                    <div className="progress-track h-2 bg-brand-dark">
+                    <div className="progress-track h-2 bg-brand-dark rounded-2xl">
                       <div className="progress-fill" style={{ width: `${progress}%` }} />
                     </div>
                     {ws?.ptNotes && (
@@ -404,7 +414,7 @@ const PTBookings: React.FC = () => {
                         handleAccept(b.id);
                         setSelectedDetailBooking(null);
                       }}
-                      className="flex items-center gap-1.5 px-4 py-2 bg-brand-red hover:bg-brand-red-dark text-white text-xs uppercase tracking-widest cursor-pointer transition-colors"
+                      className="flex items-center gap-1.5 px-4 py-2 bg-brand-red hover:bg-brand-red-dark text-white text-xs uppercase tracking-widest cursor-pointer transition-colors rounded-xl"
                     >
                       <CheckCircle size={12} />
                       Chấp Nhận
@@ -426,7 +436,7 @@ const PTBookings: React.FC = () => {
                   <Link
                     to={`/pt/workspace?bookingId=${b.id}`}
                     onClick={() => setSelectedDetailBooking(null)}
-                    className="flex items-center gap-1.5 px-4 py-2 bg-brand-red hover:bg-brand-red-dark text-white text-xs uppercase tracking-widest cursor-pointer transition-colors"
+                    className="flex items-center gap-1.5 px-4 py-2 bg-brand-red hover:bg-brand-red-dark text-white text-xs uppercase tracking-widest cursor-pointer transition-colors rounded-xl"
                   >
                     <ExternalLink size={12} />
                     Vào Phòng Trò Chuyện

@@ -1,15 +1,15 @@
 // src/pages/Customer/CustomerBookings.tsx
 import React, { useState } from 'react';
-import { Calendar, List, Clock, MapPin, MessageSquare, ArrowRight, XCircle, CreditCard } from 'lucide-react';
+import { Calendar, List, Clock, MapPin, MessageSquare, ArrowRight, XCircle, CreditCard, ArrowLeft, Check, Loader2, Home, Search, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useData } from '../../context/DataContext';
 import Badge from '../../components/Badge';
 
-const STATUS_MAP: Record<string, { label: string; variant: 'red' | 'white' | 'gray' | 'outline' }> = {
+const STATUS_MAP: Record<string, { label: string; variant: 'red' | 'white' | 'gray' | 'outline' | 'yellow' | 'green' }> = {
   Unpaid: { label: 'Chưa Thanh Toán', variant: 'outline' },
   PaidPendingAcceptance: { label: 'Chờ HLV Duyệt', variant: 'outline' },
-  Active: { label: 'Đang Hoạt Động', variant: 'red' },
-  Completed: { label: 'Hoàn Thành', variant: 'white' },
+  Active: { label: 'Đang Hoạt Động', variant: 'yellow' },
+  Completed: { label: 'Hoàn Thành', variant: 'green' },
   Cancelled: { label: 'Đã Hủy', variant: 'gray' },
 };
 
@@ -125,55 +125,61 @@ const CustomerBookings: React.FC = () => {
                 const initials = b.ptName ? b.ptName.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'PT';
                 
                 return (
-                  <div key={b.id} className={`bg-brand-surface border transition-all duration-300 ${b.status === 'Active' ? 'border-brand-red' : 'border-brand-border hover:border-brand-red/50'}`}>
-                    {b.status === 'Active' && <div className="h-0.5 w-full bg-brand-red" />}
+                  <div
+                    key={b.id}
+                    className="bg-brand-surface border border-brand-border hover:border-white/20 transition-all duration-300 group"
+                  >
                     <div className="p-6">
-                      <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
-                        <div className="flex items-start gap-4">
-                          <div className="w-14 h-14 bg-brand-dark border border-brand-border flex items-center justify-center flex-shrink-0">
-                            <span className="font-display text-xl text-white font-bold">{initials}</span>
+                      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        
+                        {/* 1. PT Info (Left) */}
+                        <div className="flex items-center gap-5 flex-1">
+                          <div className="w-14 h-14 rounded-full bg-brand-dark border border-brand-border flex items-center justify-center flex-shrink-0 group-hover:border-white/40 transition-colors duration-300 shadow-inner">
+                            <span className="font-display text-lg text-white font-bold">{initials}</span>
                           </div>
                           <div>
-                            <div className="flex flex-wrap items-center gap-3 mb-1">
-                              <h3 className="font-semibold text-white">{b.ptName || 'Huấn Luyện Viên'}</h3>
-                              <Badge variant={stat.variant}>{stat.label}</Badge>
+                            <div className="flex items-center gap-3 mb-1.5 flex-wrap">
+                              <h3 className="font-bold text-white text-lg group-hover:text-brand-red transition-colors duration-200">{b.ptName || 'Huấn Luyện Viên'}</h3>
+                              <span className="text-white/30 text-xs font-mono bg-brand-dark px-2 py-0.5 rounded-md">#{b.id.substring(0, 6)}</span>
                             </div>
-                            <p className="text-white/40 text-sm mb-3">{b.packageName || 'Gói Tập Luyện'}</p>
-                            <div className="flex flex-wrap gap-4 text-xs text-white/40">
-                              <span className="flex items-center gap-1"><Calendar size={12} />{new Date(b.createdAt).toLocaleDateString('vi-VN')}</span>
-                              <span className="flex items-center gap-1"><Clock size={12} />{new Date(b.createdAt).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}</span>
-                              <span className="flex items-center gap-1"><MapPin size={12} />Lớp Online</span>
+                            <p className="text-white/50 text-sm mb-2.5 font-medium">{b.packageName || 'Gói Tập Luyện'}</p>
+                            <div className="flex flex-wrap gap-4 text-[11px] text-white/40 uppercase tracking-widest">
+                              <span className="flex items-center gap-1.5"><Calendar size={13} className="text-brand-red/70" /> {new Date(b.createdAt).toLocaleDateString('vi-VN')}</span>
+                              <span className="flex items-center gap-1.5"><MapPin size={13} className="text-brand-red/70" /> Lớp Online</span>
+                              <span className="text-white/80 font-bold font-mono text-xs">{b.price.toLocaleString('vi-VN')}đ</span>
                             </div>
                           </div>
                         </div>
 
-                        <div className="sm:text-right flex-shrink-0">
-                          <p className="text-white/30 text-xs uppercase tracking-wider mb-1">Số buổi</p>
-                          <p className="text-white font-bold font-mono">{completedSessions}/{b.sessionsCount}</p>
-                          <p className="text-white/30 text-xs">đã tập</p>
-                        </div>
-                      </div>
-
-                      {/* Progress bar */}
-                      {(b.status === 'Active' || b.status === 'Completed') && (
-                        <div className="mt-4">
-                          <div className="flex justify-between mb-2">
-                            <span className="text-white/30 text-xs uppercase tracking-wider">Tiến trình khóa tập</span>
-                            <span className="text-white text-xs font-semibold">{progress}%</span>
+                        {/* 2. Status & Progress (Middle) */}
+                        <div className="flex-1 lg:max-w-[280px] xl:max-w-[320px] w-full">
+                          <div className="flex justify-between items-center mb-3">
+                             <Badge variant={stat.variant}>{stat.label}</Badge>
+                             {(b.status === 'Active' || b.status === 'Completed') && (
+                               <span className="text-white text-xs font-bold font-mono">{progress}%</span>
+                             )}
                           </div>
-                          <div className="progress-track">
-                            <div className="progress-fill" style={{ width: `${progress}%` }} />
-                          </div>
+                          {(b.status === 'Active' || b.status === 'Completed') && (
+                            <>
+                              <div className="w-full h-1.5 bg-brand-dark border border-brand-border/50 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full transition-all duration-1000 ease-out ${b.status === 'Active' ? 'bg-yellow-500' : 'bg-green-500 shadow-[0_0_8px_#22c55e]'}`}
+                                  style={{ width: `${progress}%` }} 
+                                />
+                              </div>
+                              <p className="text-[10px] text-white/40 uppercase tracking-widest mt-2 text-right font-medium">
+                                {completedSessions} / {b.sessionsCount} Buổi Tập
+                              </p>
+                            </>
+                          )}
                         </div>
-                      )}
 
-                      {/* Actions */}
-                      <div className="flex flex-wrap items-center gap-3 mt-4 pt-4 border-t border-brand-border justify-between">
-                        <div className="flex gap-2">
+                        {/* 3. Actions (Right) */}
+                        <div className="flex items-center gap-3 flex-shrink-0 lg:justify-end w-full lg:w-auto mt-2 lg:mt-0 pt-4 lg:pt-0 border-t lg:border-t-0 border-brand-border/40">
                           {b.status === 'Active' && (
                             <Link to="/customer/workspace" className="btn-primary text-xs py-2.5 px-5">
-                              <MessageSquare size={12} />
-                              Vào Workspace & Chat
+                              <MessageSquare size={14} />
+                              Vào Workspace
                             </Link>
                           )}
                           {b.status === 'Completed' && (
@@ -185,24 +191,22 @@ const CustomerBookings: React.FC = () => {
                             </button>
                           )}
                           {b.status === 'Unpaid' && (
-                            <Link to={`/checkout/${b.id}`} className="btn-primary text-xs py-2.5 px-5 bg-brand-red hover:bg-brand-red-dark">
-                              <CreditCard size={12} />
+                            <Link to={`/checkout/${b.id}`} className="btn-primary text-xs py-2.5 px-5">
+                              <CreditCard size={14} />
                               Thanh Toán Ngay
                             </Link>
                           )}
                           {(b.status === 'Unpaid' || b.status === 'PaidPendingAcceptance') && (
                             <button
                               onClick={() => handleCancel(b.id)}
-                              className="flex items-center gap-1.5 px-4 py-2 border border-brand-border text-brand-red hover:bg-brand-red/10 text-xs uppercase tracking-widest cursor-pointer transition-colors"
+                              className="btn-secondary text-xs py-2.5 px-5 border-brand-border text-brand-red hover:bg-brand-red hover:text-white hover:border-brand-red"
                             >
-                              <XCircle size={12} />
-                              Hủy Đặt Lịch
+                              <XCircle size={14} />
+                              Hủy Đặt
                             </button>
                           )}
                         </div>
-                        <span className="text-white/50 text-sm font-semibold font-mono">
-                          {b.price.toLocaleString('vi-VN')}đ
-                        </span>
+
                       </div>
                     </div>
                   </div>
@@ -232,10 +236,10 @@ const CustomerBookings: React.FC = () => {
                 </h3>
                 <div className="flex gap-2">
                   <div className="flex items-center gap-2 text-xs text-white/40">
-                    <div className="w-3 h-3 bg-brand-red" /> Ngày Có Buổi (Dự kiến)
+                    <div className="w-3 h-3 bg-brand-red rounded-full" /> Ngày Có Buổi (Dự kiến)
                   </div>
                   <div className="flex items-center gap-2 text-xs text-white/40 ml-4">
-                    <div className="w-3 h-3 border border-white" /> Hôm Nay
+                    <div className="w-3 h-3 border border-white rounded-full" /> Hôm Nay
                   </div>
                 </div>
               </div>
@@ -305,15 +309,15 @@ const CustomerBookings: React.FC = () => {
       {/* Mobile Bottom Nav */}
       <nav className="mobile-bottom-bar">
         {[
-          { label: 'Trang Chủ', icon: '⚡', path: '/' },
-          { label: 'Tìm PT', icon: '🔍', path: '/marketplace' },
-          { label: 'Lịch', icon: '📅', path: '/customer/bookings' },
-          { label: 'Chat', icon: '💬', path: '/customer/workspace' },
-          { label: 'Hồ Sơ', icon: '👤', path: '/customer/profile' },
+          { label: 'Trang Chủ', icon: <Home size={20} />, path: '/' },
+          { label: 'Tìm PT', icon: <Search size={20} />, path: '/marketplace' },
+          { label: 'Lịch', icon: <Calendar size={20} />, path: '/customer/bookings' },
+          { label: 'Chat', icon: <MessageSquare size={20} />, path: '/customer/workspace' },
+          { label: 'Hồ Sơ', icon: <User size={20} />, path: '/customer/profile' },
         ].map((tab, i) => (
-          <Link key={i} to={tab.path} className="flex flex-col items-center gap-1 px-3 py-1">
-            <span className="text-xl">{tab.icon}</span>
-            <span className="text-white/50 text-[10px] uppercase tracking-widest">{tab.label}</span>
+          <Link key={i} to={tab.path} className="flex flex-col items-center gap-1 px-3 py-1 text-white/50 hover:text-brand-red transition-colors">
+            <span className="flex items-center justify-center">{tab.icon}</span>
+            <span className="text-[10px] uppercase tracking-widest mt-1">{tab.label}</span>
           </Link>
         ))}
       </nav>

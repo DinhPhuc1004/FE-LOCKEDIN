@@ -88,7 +88,7 @@ const AdminHome: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* 1. WELCOME & BRAND BANNER CARD (Large 2-column Block) */}
-          <div className="lg:col-span-2 bg-gradient-to-r from-brand-red via-[#ad0505] to-[#800000] p-8 relative overflow-hidden group shadow-lg">
+          <div className="lg:col-span-2 bg-gradient-to-r from-brand-red via-[#ad0505] to-[#800000] p-8 relative overflow-hidden group shadow-lg rounded-2xl">
             {/* Abstract visual background circles */}
             <div className="absolute -right-10 -bottom-10 w-48 h-48 bg-white/5 rounded-full blur-xl group-hover:scale-110 transition-transform duration-500" />
             <div className="absolute right-1/4 -top-10 w-32 h-32 bg-black/10 rounded-full blur-lg" />
@@ -148,7 +148,7 @@ const AdminHome: React.FC = () => {
           </div>
 
           {/* 3. MULTI-DIVIDED STATS PANEL (Full-width 3-column Block) */}
-          <div className="lg:col-span-3 bg-brand-surface border border-brand-border shadow-sm rounded-none">
+          <div className="lg:col-span-3 bg-brand-surface border border-brand-border shadow-sm rounded-2xl">
             <div className="grid grid-cols-2 lg:grid-cols-4 divide-y lg:divide-y-0 lg:divide-x divide-brand-border">
               {[
                 { 
@@ -218,7 +218,7 @@ const AdminHome: React.FC = () => {
                       <div className="flex gap-2 mt-3">
                         <button 
                           onClick={() => handleApprovePT(pt.id)}
-                          className="bg-brand-red hover:bg-brand-red/90 text-white text-xs py-1.5 px-4 font-bold flex items-center gap-1 cursor-pointer"
+                          className="bg-brand-red hover:bg-brand-red/90 text-white text-xs py-1.5 px-4 font-bold flex items-center gap-1 cursor-pointer rounded-xl"
                         >
                           <CheckCircle size={12} />
                           Duyệt
@@ -258,7 +258,7 @@ const AdminHome: React.FC = () => {
                           <h4 className="text-white font-bold text-sm">Khách hàng: {d.customerName}</h4>
                           <p className="text-white/40 text-[11px]">HLV phụ trách: <span className="text-white">{d.ptName}</span></p>
                         </div>
-                        <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded font-mono uppercase">Dispute</span>
+                        <span className="text-[9px] font-bold text-amber-500 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded font-mono uppercase rounded-xl">Dispute</span>
                       </div>
                       <div className="text-xs bg-brand-surface/40 p-2 border-l border-brand-red">
                         <p className="text-white/70 font-semibold">Lý do khiếu nại:</p>
